@@ -1,5 +1,12 @@
 begin
     read(b);
-    read(c);
-    if(b<c) then write(b); else write(c); endif;  
+    while(b<6) do 
+        if(b==3) then
+          b = b + 1;
+          continue;
+        else
+          write(b);
+        endif;    
+        b = b + 1;
+    endwhile;     
 end;

@@ -2,56 +2,44 @@ int reg=-1;
 int label = -1;
 int arr[26];
 
-struct Stack {
-    int break_label;
-    int cont_label;
-    unsigned capacity;
-    int* array;
-};
- 
+struct Stack* stack = NULL;
+
 struct Stack* createStack(unsigned capacity)
 {
     struct Stack* stack = (struct Stack*)malloc(sizeof(struct Stack));
     stack->capacity = capacity;
     stack->break_label = -1;
-    stack->continue_label = -1;
+    stack->cont_label = -1;
     stack->array = (int*)malloc(stack->capacity * sizeof(int));
     return stack;
 }
  
-int isFull(struct Stack* stack)
-{
-    return stack->top == stack->capacity - 1;
-}
- 
 int isEmpty(struct Stack* stack)
 {
-    return stack->top == -1;
+    return (stack->break_label == -1) && (stack->cont_label == -1);
 }
  
-void push(struct Stack* stack, int item)
+void push(struct Stack* stack, int break_label,int cont_label)
 {
-    if (isFull(stack))
-        return;
-    stack->array[++stack->top] = item;
+    stack->array[++stack->break_label] = break_label;
+    stack->array[stack->cont_label] = cont_label;
 }
 
 
-int pop(struct Stack* stack)
+int pop(struct Stack* stack, char *str)
 {
     if (isEmpty(stack))
         return INT_MIN;
-    return stack->array[stack->top--];
-}
- 
-int peek(struct Stack* stack)
-{
-    if (isEmpty(stack))
-        return INT_MIN;
-    return stack->array[stack->top];
-}
 
-struct Stack* stack = createStack(100);
+    if(str == "break")
+    {    
+        return stack->array[stack->break_label--];
+    }
+    else if(str == "continue")
+    {
+        return stack->array[stack->cont_label--];
+    }    
+}
 
 int getReg()
 {
@@ -244,6 +232,9 @@ void whileBlock(FILE *fptr,struct tnode *root)
     int looplno = getLabel();
     fprintf(fptr,"L%d:\n",looplno);
     int lno = whileCondBlock(fptr,root->left); //condition checking
+    
+    push(stack,lno,looplno);
+    
     codeGen(root->right->left,fptr);//do statement
     fprintf(fptr,"JMP L%d\n",looplno);
     fprintf(fptr,"L%d:\n",lno);
@@ -375,6 +366,19 @@ int codeGen(struct tnode *root, FILE *fptr)
 {
     if(root->left==NULL && root->right==NULL)
     {
+
+        if(root->nodetype==11)
+        {
+            int lno = pop(stack,"break");
+            fprintf(fptr,"JMP L%d\n",lno);
+        }
+
+        if(root->nodetype==14)
+        {
+            int lno = pop(stack,"continue");
+            fprintf(fptr,"JMP L%d\n",lno);
+        }
+
         int reg = getReg();
         if(root->nodetype==0)
         {
@@ -412,17 +416,6 @@ int codeGen(struct tnode *root, FILE *fptr)
         return -1;
     }
 
-    if(root->nodetype==11)
-    {
-        if(root->varname=="break")
-        {
-            return -2;
-        }
-        if(root->varname=="continue")
-        {
-            return -3;
-        }
-    }
 
     int l = codeGen(root->left,fptr);
 
@@ -457,7 +450,6 @@ int codeGen(struct tnode *root, FILE *fptr)
     else
     {    
         int r = codeGen(root->right,fptr);
-        
 
         if(*(root->varname)=='=')
         {
@@ -498,6 +490,8 @@ void codegenerator(struct tnode *root)
     fprintf(fptr, "%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n",0,2056,0,0,0,0,0,0);
     fprintf(fptr,"MOV SP, 4112\n");
     fprintf(fptr,"MOV BP, 4113\n");
+
+    stack = createStack(100);
     int ret = codeGen(root,fptr);
     fprintf(fptr,"INT 10");
 }

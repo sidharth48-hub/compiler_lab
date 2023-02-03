@@ -178,7 +178,7 @@ struct tnode* makecontNode()
     temp = (struct tnode*)malloc(sizeof(struct tnode));
     temp->varname = malloc(sizeof(char));
     strcpy(temp->varname,"continue");
-    temp->nodetype = 11;
+    temp->nodetype = 14;
     temp->left = NULL;
     temp->right = NULL;
     return temp;
@@ -249,7 +249,7 @@ void inorder(struct tnode  *t)
     if(t->right!=NULL)
     inorder(t->right);
 
-    if(t->nodetype==2 || t->nodetype==3 || t->nodetype==6 || t->nodetype==7 || t->nodetype==8 || t->nodetype==9 || t->nodetype==10 || t->nodetype==13)
+    if(t->nodetype==2 || t->nodetype==3 || t->nodetype==6 || t->nodetype==7 || t->nodetype==8 || t->nodetype==9 || t->nodetype==10 || t->nodetype==11 ||t->nodetype==13)
         printf("%s\n",t->varname);
     
     if(t->nodetype==4 || t->nodetype==5)

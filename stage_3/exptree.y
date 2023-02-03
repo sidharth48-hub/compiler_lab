@@ -2,6 +2,7 @@
     #include <stdio.h>
     #include <stdlib.h>
     #include <string.h>
+    #include <limits.h>
     #include "exptree.h"
     #include "exptree.c"
     #include "codegen.c"
@@ -14,7 +15,7 @@
     struct tnode *no;
 };
 
-%type <no> program Slist InputStmt OutputStmt AssgStmt expr stmt Ifstmt Whilestmt breakstmt contstmt dowhilestmt repuntilstmt
+%type <no> program Slist InputStmt OutputStmt AssgStmt expr stmt Ifstmt Whilestmt breakstmt continuestmt dowhilestmt repuntilstmt
 %token NUM PLUS MINUS MUL DIV END READ WRITE START ID SEMICOLON EQUAL BREAK CONTINUE 
 %token IF THEN ELSE ENDIF WHILE DO ENDWHILE REPEAT UNTIL
 %token LT GT LTE GTE NE EQ
@@ -43,7 +44,7 @@ stmt : InputStmt {$$=$<no>1;}
      | Ifstmt {$$=$<no>1;}
      | Whilestmt {$$=$<no>1;}
      | breakstmt {$$=$<no>1;}
-     | contstmt {$$=$<no>1;}
+     | continuestmt {$$=$<no>1;}
      | dowhilestmt {$$=$<no>1;}
      | repuntilstmt {$$=$<no>1;}
      ;
@@ -74,7 +75,7 @@ repuntilstmt : REPEAT Slist UNTIL'(' expr ')' SEMICOLON {$$=makerepuntilNode($<n
 breakstmt : BREAK SEMICOLON {$$=makebreakNode();}
           ;
 
-contstmt : CONTINUE SEMICOLON {$$=makecontNode();}
+continuestmt : CONTINUE SEMICOLON {$$=makecontNode();}
          ;
 
 expr : expr PLUS expr {$$ = makeOperatorNode("+",$<no>1,$<no>3); $$->type = inttype;}

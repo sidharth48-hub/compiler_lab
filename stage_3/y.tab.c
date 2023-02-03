@@ -71,6 +71,7 @@
     #include <stdio.h>
     #include <stdlib.h>
     #include <string.h>
+    #include <limits.h>
     #include "exptree.h"
     #include "exptree.c"
     #include "codegen.c"
@@ -78,7 +79,7 @@
     int yylex(void);
     int yyerror();
 
-#line 82 "y.tab.c"
+#line 83 "y.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -192,11 +193,11 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 13 "exptree.y"
+#line 14 "exptree.y"
 
     struct tnode *no;
 
-#line 200 "y.tab.c"
+#line 201 "y.tab.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -574,10 +575,10 @@ static const yytype_int8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int8 yyrline[] =
 {
-       0,    30,    30,    33,    36,    37,    40,    41,    42,    43,
-      44,    45,    46,    47,    48,    51,    55,    58,    61,    62,
-      65,    68,    71,    74,    77,    80,    81,    82,    83,    84,
-      85,    86,    87,    88,    89,    90,    91,    92
+       0,    31,    31,    34,    37,    38,    41,    42,    43,    44,
+      45,    46,    47,    48,    49,    52,    56,    59,    62,    63,
+      66,    69,    72,    75,    78,    81,    82,    83,    84,    85,
+      86,    87,    88,    89,    90,    91,    92,    93
 };
 #endif
 
@@ -592,7 +593,7 @@ static const char *const yytname[] =
   "REPEAT", "UNTIL", "LT", "GT", "LTE", "GTE", "NE", "EQ", "'('", "')'",
   "$accept", "program", "Slist", "stmt", "InputStmt", "OutputStmt",
   "AssgStmt", "Ifstmt", "Whilestmt", "dowhilestmt", "repuntilstmt",
-  "breakstmt", "contstmt", "expr", YY_NULLPTR
+  "breakstmt", "continuestmt", "expr", YY_NULLPTR
 };
 #endif
 
@@ -1463,225 +1464,225 @@ yyreduce:
   switch (yyn)
     {
   case 2:
-#line 30 "exptree.y"
+#line 31 "exptree.y"
                                     {(yyval.no)=(yyvsp[-2].no);
                 codegenerator((yyvsp[-2].no));
                 exit(1);}
-#line 1471 "y.tab.c"
+#line 1472 "y.tab.c"
     break;
 
   case 3:
-#line 33 "exptree.y"
+#line 34 "exptree.y"
                               {exit(1);}
-#line 1477 "y.tab.c"
+#line 1478 "y.tab.c"
     break;
 
   case 4:
-#line 36 "exptree.y"
+#line 37 "exptree.y"
                    {(yyval.no)=makeConnectorNode('.',(yyvsp[-1].no),(yyvsp[0].no));}
-#line 1483 "y.tab.c"
+#line 1484 "y.tab.c"
     break;
 
   case 5:
-#line 37 "exptree.y"
+#line 38 "exptree.y"
              {(yyval.no)=(yyvsp[0].no);}
-#line 1489 "y.tab.c"
+#line 1490 "y.tab.c"
     break;
 
   case 6:
-#line 40 "exptree.y"
+#line 41 "exptree.y"
                  {(yyval.no)=(yyvsp[0].no);}
-#line 1495 "y.tab.c"
+#line 1496 "y.tab.c"
     break;
 
   case 7:
-#line 41 "exptree.y"
+#line 42 "exptree.y"
                   {(yyval.no)=(yyvsp[0].no);}
-#line 1501 "y.tab.c"
+#line 1502 "y.tab.c"
     break;
 
   case 8:
-#line 42 "exptree.y"
+#line 43 "exptree.y"
                 {(yyval.no)=(yyvsp[0].no);}
-#line 1507 "y.tab.c"
+#line 1508 "y.tab.c"
     break;
 
   case 9:
-#line 43 "exptree.y"
+#line 44 "exptree.y"
               {(yyval.no)=(yyvsp[0].no);}
-#line 1513 "y.tab.c"
+#line 1514 "y.tab.c"
     break;
 
   case 10:
-#line 44 "exptree.y"
+#line 45 "exptree.y"
                  {(yyval.no)=(yyvsp[0].no);}
-#line 1519 "y.tab.c"
+#line 1520 "y.tab.c"
     break;
 
   case 11:
-#line 45 "exptree.y"
+#line 46 "exptree.y"
                  {(yyval.no)=(yyvsp[0].no);}
-#line 1525 "y.tab.c"
+#line 1526 "y.tab.c"
     break;
 
   case 12:
-#line 46 "exptree.y"
-                {(yyval.no)=(yyvsp[0].no);}
-#line 1531 "y.tab.c"
+#line 47 "exptree.y"
+                    {(yyval.no)=(yyvsp[0].no);}
+#line 1532 "y.tab.c"
     break;
 
   case 13:
-#line 47 "exptree.y"
+#line 48 "exptree.y"
                    {(yyval.no)=(yyvsp[0].no);}
-#line 1537 "y.tab.c"
+#line 1538 "y.tab.c"
     break;
 
   case 14:
-#line 48 "exptree.y"
+#line 49 "exptree.y"
                     {(yyval.no)=(yyvsp[0].no);}
-#line 1543 "y.tab.c"
+#line 1544 "y.tab.c"
     break;
 
   case 15:
-#line 51 "exptree.y"
+#line 52 "exptree.y"
                                      {(yyval.no)=makereadNode((yyvsp[-2].no));}
-#line 1549 "y.tab.c"
+#line 1550 "y.tab.c"
     break;
 
   case 16:
-#line 55 "exptree.y"
+#line 56 "exptree.y"
                                          {(yyval.no)=makewriteNode((yyvsp[-2].no));}
-#line 1555 "y.tab.c"
+#line 1556 "y.tab.c"
     break;
 
   case 17:
-#line 58 "exptree.y"
+#line 59 "exptree.y"
                                    {(yyval.no)=makeOperatorNode("=",(yyvsp[-3].no),(yyvsp[-1].no));}
-#line 1561 "y.tab.c"
+#line 1562 "y.tab.c"
     break;
 
   case 18:
-#line 61 "exptree.y"
+#line 62 "exptree.y"
                                                               {(yyval.no)=makeIfNode((yyvsp[-7].no),(yyvsp[-4].no),(yyvsp[-2].no));}
-#line 1567 "y.tab.c"
+#line 1568 "y.tab.c"
     break;
 
   case 19:
-#line 62 "exptree.y"
+#line 63 "exptree.y"
                                                    {(yyval.no)=makeNoElseNode((yyvsp[-5].no),(yyvsp[-2].no));}
-#line 1573 "y.tab.c"
+#line 1574 "y.tab.c"
     break;
 
   case 20:
-#line 65 "exptree.y"
+#line 66 "exptree.y"
                                                           {(yyval.no)=makeWhileNode((yyvsp[-5].no),(yyvsp[-2].no));}
-#line 1579 "y.tab.c"
+#line 1580 "y.tab.c"
     break;
 
   case 21:
-#line 68 "exptree.y"
+#line 69 "exptree.y"
                                                    {(yyval.no)=makedowhileNode((yyvsp[-5].no),(yyvsp[-2].no));}
-#line 1585 "y.tab.c"
+#line 1586 "y.tab.c"
     break;
 
   case 22:
-#line 71 "exptree.y"
+#line 72 "exptree.y"
                                                         {(yyval.no)=makerepuntilNode((yyvsp[-5].no),(yyvsp[-2].no));}
-#line 1591 "y.tab.c"
+#line 1592 "y.tab.c"
     break;
 
   case 23:
-#line 74 "exptree.y"
+#line 75 "exptree.y"
                             {(yyval.no)=makebreakNode();}
-#line 1597 "y.tab.c"
+#line 1598 "y.tab.c"
     break;
 
   case 24:
-#line 77 "exptree.y"
-                              {(yyval.no)=makecontNode();}
-#line 1603 "y.tab.c"
+#line 78 "exptree.y"
+                                  {(yyval.no)=makecontNode();}
+#line 1604 "y.tab.c"
     break;
 
   case 25:
-#line 80 "exptree.y"
+#line 81 "exptree.y"
                       {(yyval.no) = makeOperatorNode("+",(yyvsp[-2].no),(yyvsp[0].no)); (yyval.no)->type = inttype;}
-#line 1609 "y.tab.c"
+#line 1610 "y.tab.c"
     break;
 
   case 26:
-#line 81 "exptree.y"
+#line 82 "exptree.y"
                       {(yyval.no) = makeOperatorNode("-",(yyvsp[-2].no),(yyvsp[0].no)); (yyval.no)->type = inttype;}
-#line 1615 "y.tab.c"
+#line 1616 "y.tab.c"
     break;
 
   case 27:
-#line 82 "exptree.y"
+#line 83 "exptree.y"
                     {(yyval.no) = makeOperatorNode("*",(yyvsp[-2].no),(yyvsp[0].no)); (yyval.no)->type = inttype;}
-#line 1621 "y.tab.c"
+#line 1622 "y.tab.c"
     break;
 
   case 28:
-#line 83 "exptree.y"
+#line 84 "exptree.y"
                     {(yyval.no) = makeOperatorNode("/",(yyvsp[-2].no),(yyvsp[0].no)); (yyval.no)->type = inttype;}
-#line 1627 "y.tab.c"
+#line 1628 "y.tab.c"
     break;
 
   case 29:
-#line 84 "exptree.y"
+#line 85 "exptree.y"
                    {(yyval.no) = makeOperatorNode("<",(yyvsp[-2].no),(yyvsp[0].no)); (yyval.no)->type = booltype;}
-#line 1633 "y.tab.c"
+#line 1634 "y.tab.c"
     break;
 
   case 30:
-#line 85 "exptree.y"
+#line 86 "exptree.y"
                    {(yyval.no) = makeOperatorNode(">",(yyvsp[-2].no),(yyvsp[0].no)); (yyval.no)->type = booltype;}
-#line 1639 "y.tab.c"
+#line 1640 "y.tab.c"
     break;
 
   case 31:
-#line 86 "exptree.y"
+#line 87 "exptree.y"
                    {(yyval.no) = makeOperatorNode("!=",(yyvsp[-2].no),(yyvsp[0].no)); (yyval.no)->type = booltype;}
-#line 1645 "y.tab.c"
+#line 1646 "y.tab.c"
     break;
 
   case 32:
-#line 87 "exptree.y"
+#line 88 "exptree.y"
                     {(yyval.no) = makeOperatorNode("<=",(yyvsp[-2].no),(yyvsp[0].no)); (yyval.no)->type = booltype;}
-#line 1651 "y.tab.c"
+#line 1652 "y.tab.c"
     break;
 
   case 33:
-#line 88 "exptree.y"
+#line 89 "exptree.y"
                     {(yyval.no) = makeOperatorNode(">=",(yyvsp[-2].no),(yyvsp[0].no)); (yyval.no)->type = booltype;}
-#line 1657 "y.tab.c"
+#line 1658 "y.tab.c"
     break;
 
   case 34:
-#line 89 "exptree.y"
+#line 90 "exptree.y"
                    {(yyval.no) = makeOperatorNode("==",(yyvsp[-2].no),(yyvsp[0].no)); (yyval.no)->type = booltype;}
-#line 1663 "y.tab.c"
+#line 1664 "y.tab.c"
     break;
 
   case 35:
-#line 90 "exptree.y"
+#line 91 "exptree.y"
                    {(yyval.no)=(yyvsp[-1].no);}
-#line 1669 "y.tab.c"
+#line 1670 "y.tab.c"
     break;
 
   case 36:
-#line 91 "exptree.y"
+#line 92 "exptree.y"
          {(yyval.no)=(yyvsp[0].no);}
-#line 1675 "y.tab.c"
+#line 1676 "y.tab.c"
     break;
 
   case 37:
-#line 92 "exptree.y"
+#line 93 "exptree.y"
           {(yyval.no)=(yyvsp[0].no);}
-#line 1681 "y.tab.c"
+#line 1682 "y.tab.c"
     break;
 
 
-#line 1685 "y.tab.c"
+#line 1686 "y.tab.c"
 
       default: break;
     }
@@ -1913,7 +1914,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 94 "exptree.y"
+#line 95 "exptree.y"
 
 
 int yyerror(char const *s)
