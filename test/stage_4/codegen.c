@@ -111,7 +111,7 @@ int varaddress(char c)
     return 4096+(c-'a');
 }
 
-int ifCondBlock(FILE *fptr,struct tnode* root)
+int ifCondBlock(FILE *fptr,struct tnode* root,char *str)
 {
     int l = codeGen(root->left,fptr);
     int r = codeGen(root->right,fptr);
@@ -154,15 +154,18 @@ int ifCondBlock(FILE *fptr,struct tnode* root)
         fprintf(fptr,"EQ R%d, R%d\n",l,r);                                                         
     }
     
-    fprintf(fptr,"JNZ R%d,L%d\n",l,lno);
+    if(str=="else")
+        fprintf(fptr,"JNZ R%d,L%d\n",l,lno);//if-then-else
+    else
+        fprintf(fptr,"JZ R%d,L%d\n",l,lno);//if-then    
     return lno;
 }
 
 void ifBlock(FILE *fptr,struct tnode *root)  
-{
-    int lno = ifCondBlock(fptr,root->left); //return label no
-
+{   
     struct tnode *temp = root->right;
+    
+    int lno = ifCondBlock(fptr,root->left,temp->right->varname); //return label no
     
     int elselno=-1;
     if(temp->right->varname == "else")
@@ -170,9 +173,14 @@ void ifBlock(FILE *fptr,struct tnode *root)
         codeGen(temp->right->left,fptr); //else block
         elselno = getLabel();
         fprintf(fptr,"JMP L%d\n",elselno);
+        fprintf(fptr,"L%d:\n",lno);
+        codeGen(temp->left,fptr);//then block
     }
-    fprintf(fptr,"L%d:\n",lno);
-    codeGen(temp->left,fptr);//then block
+    else
+    {
+        codeGen(temp->left,fptr);//then block
+        fprintf(fptr,"L%d:\n",lno);
+    }    
     if(elselno!=-1)
     {
         fprintf(fptr,"L%d:\n",elselno);
@@ -364,19 +372,21 @@ void repuntilBlock(FILE *fptr,struct tnode *root)
 
 int codeGen(struct tnode *root, FILE *fptr)
 {
-    if(root->left==NULL && root->right==NULL)
+    if(root->left==NULL && root->right==NULL && root->nodetype!=1)
     {
 
         if(root->nodetype==11)
         {
             int lno = pop(stack,"break");
             fprintf(fptr,"JMP L%d\n",lno);
+            return -1;
         }
 
         if(root->nodetype==14)
         {
             int lno = pop(stack,"continue");
             fprintf(fptr,"JMP L%d\n",lno);
+            return -1;
         }
 
         int reg = getReg();
@@ -384,17 +394,50 @@ int codeGen(struct tnode *root, FILE *fptr)
         {
             fprintf(fptr, "MOV R%d, %d\n",reg,root->val);
         }
-        else if(root->nodetype==1)
-        {
-            int add = root->Gentry->binding;
-            fprintf(fptr, "MOV R%d, %d\n",reg,add);
-        }
         else if(root->nodetype==15) //strings
         {
             fprintf(fptr,"MOV R%d, %s\n",reg,root->varname);
-            callwrite(reg,fptr);
         }    
         return reg;
+    }
+
+    if(root->nodetype==1)
+    {
+        int reg = getReg();
+        int addr = root->Gentry->binding;
+        if(root->left==NULL && root->right == NULL)
+        {
+            fprintf(fptr, "MOV R%d, %d\n",reg,addr);
+        }
+        else if(root->left!=NULL && root->right==NULL) //single array
+        {
+            int loc = root->left->Gentry->binding;
+            int index = getReg();
+            fprintf(fptr,"MOV R%d, %d\n",index,loc);
+            fprintf(fptr,"MOV R%d, [R%d]\n",index,index);
+            fprintf(fptr,"MOV R%d, %d\n",reg,addr);
+            fprintf(fptr,"ADD R%d, R%d\n",reg,index);
+            freeReg();
+        }
+        else if(root->left!=NULL && root->right!=NULL) //double array
+        {
+            int loc1 = (root->left->Gentry->binding);
+            int loc2 = (root->right->Gentry->binding);
+            int index1 = getReg();
+            int index2 = getReg();
+
+            
+            fprintf(fptr,"MOV R%d, %d\n",index1,loc1);
+            fprintf(fptr,"MOV R%d, [R%d]\n",index1,index1);
+            fprintf(fptr,"MOV R%d, %d\n",index2,loc2);
+            fprintf(fptr,"MOV R%d, [R%d]\n",index2,index2);
+            fprintf(fptr,"MUL R%d, R%d\n",index1,index2);
+            fprintf(fptr,"MOV R%d, %d\n",reg,addr);
+            fprintf(fptr,"ADD R%d, R%d\n",reg,index1);
+            freeReg();
+            freeReg();
+        }
+        return reg;    
     }
 
     if(root->nodetype==6)
@@ -458,15 +501,22 @@ int codeGen(struct tnode *root, FILE *fptr)
 
         if(*(root->varname)=='=')
         {
-            fprintf(fptr,"MOV [R%d], R%d\n",l,r);
+            if(root->left->nodetype==1 && root->right->nodetype == 1)
+            {
+                fprintf(fptr,"MOV [R%d], [R%d]\n",l,r);
+            }
+            else if(root->left->nodetype == 1)
+            {
+                fprintf(fptr,"MOV [R%d], R%d\n",l,r);
+            }    
         }
         else
         {
-            if(root->left->nodetype==1)
+            if(root->left->nodetype == 1)
             {
-                fprintf(fptr,"MOV R%d,[R%d]\n",l,l);
+                fprintf(fptr,"MOV R%d, [R%d]\n",l,l);
             }
-            if(root->right->nodetype==1)
+            if(root->right->nodetype == 1)
             {
                 fprintf(fptr,"MOV R%d, [R%d]\n",r,r);
             }
@@ -481,6 +531,7 @@ int codeGen(struct tnode *root, FILE *fptr)
                            break;
                 case '/' : fprintf(fptr,"DIV R%d, R%d\n",l,r);
                            break;
+                case '%' : fprintf(fptr,"MOD R%d, R%d\n",l,r);           
             }
         }
     }

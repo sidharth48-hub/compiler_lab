@@ -97,9 +97,10 @@ void printGsymbolTable()
 
 void LinkIdTable(struct tnode *root)
 {
-    if(root->nodetype==1 && root->left==NULL && root->right==NULL)
+    if(root->nodetype==1)
     {
         root->Gentry = Lookup(root->varname);
+        //printf("%d\n",root->Gentry->binding);
     }
 
     if(root->left!=NULL)
@@ -191,14 +192,14 @@ struct tnode* makeNumberNode(int n)
     return temp;
 }
 
-struct tnode* makeIdNode(char *str)
+struct tnode* makeIdNode(char *str,struct tnode *left,struct tnode *right)
 {
     struct tnode *temp;
     temp = (struct tnode*)malloc(sizeof(struct tnode));
     temp->nodetype=1;//variable
     temp->varname = str;
-    temp->left = NULL;
-    temp->right = NULL;
+    temp->left = left;
+    temp->right = right;
     return temp;
 }
 
@@ -424,13 +425,10 @@ struct tnode* makerepuntilNode(struct tnode *left, struct tnode *right)
 
 void inorder(struct tnode  *t)
 {
-    if(t->left==NULL && t->right==NULL)
+    if(t->left==NULL && t->right==NULL && t->nodetype!=1)
     {
         if(t->nodetype==0)
             printf("%d\n",t->val);
-        
-        else if(t->nodetype==1)
-            printf("%s\n",t->varname);
     }
 
     if(t->left!=NULL)
@@ -441,7 +439,7 @@ void inorder(struct tnode  *t)
     if(t->right!=NULL)
     inorder(t->right);
 
-    if(t->nodetype==2 || t->nodetype==3 || t->nodetype==6 || t->nodetype==7 || t->nodetype==8 || t->nodetype==9 || t->nodetype==10 || t->nodetype==11 ||t->nodetype==13 || t->nodetype==15 || t->nodetype==16)
+    if(t->nodetype==1 || t->nodetype==2 || t->nodetype==3 || t->nodetype==6 || t->nodetype==7 || t->nodetype==8 || t->nodetype==9 || t->nodetype==10 || t->nodetype==11 ||t->nodetype==13 || t->nodetype==15 || t->nodetype==16)
         printf("%s\n",t->varname);
     
     if(t->nodetype==4 || t->nodetype==5)

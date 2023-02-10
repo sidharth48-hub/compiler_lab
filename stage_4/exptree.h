@@ -47,7 +47,7 @@ struct dnode* makeDeclNode(struct dnode *l, struct dnode *r);
 
 struct tnode* makeNumberNode(int n);
 
-struct tnode* makeIdNode(char *str);
+struct tnode* makeIdNode(char *str,struct tnode *left, struct tnode *right);
 
 struct tnode* makeStringsNode(char *str);
 

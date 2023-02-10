@@ -20,7 +20,7 @@
     int num;
 };
 
-%type <no> program Slist InputStmt OutputStmt AssgStmt expr stmt Ifstmt Whilestmt breakstmt continuestmt dowhilestmt repuntilstmt 
+%type <no> program Slist InputStmt OutputStmt AssgStmt expr stmt Ifstmt Whilestmt breakstmt continuestmt dowhilestmt repuntilstmt Identifier
 %type <dno> Declarations DeclList Decl VarList IdDecl
 %type <num> Type
 %token START END DECL ENDDECL INT STR SEMICOLON
@@ -28,11 +28,11 @@
 %token IF THEN ELSE ENDIF
 %token WHILE DO ENDWHILE REPEAT UNTIL BREAK CONTINUE
 %token NUM ID STRING
-%left PLUS MINUS
-%left MUL DIV
 %left GTE LTE 
 %left LT GT
 %left NE EQ
+%left PLUS MINUS
+%left MUL DIV MOD
 %right EQUAL
 
 %%
@@ -66,12 +66,24 @@ VarList : VarList ',' IdDecl {$$=makeDeclNode($<dno>1,$<dno>3);}
         | IdDecl {$$=$<dno>1;}
         ;
 
-IdDecl : ID   {
-                  shape = (int*)malloc(2*sizeof(int));
-                  shape[0] = 0;
-                  shape[1] = 0; 
-                  $$=makeIdNodeDecl($<ch>1,0,shape); 
-              }
+IdDecl : ID             {
+                            shape = (int*)malloc(2*sizeof(int));
+                            shape[0] = 0;
+                            shape[1] = 0; 
+                            $$=makeIdNodeDecl($<ch>1,0,shape); 
+                        }
+        | ID'[' NUM ']' {
+                            shape = (int*)malloc(2*sizeof(int));
+                            shape[0] = $<num>3;
+                            shape[1] = 0; 
+                            $$=makeIdNodeDecl($<ch>1,1,shape);
+                        }
+        | ID'[' NUM ']''[' NUM ']' {
+                            shape = (int*)malloc(2*sizeof(int));
+                            shape[0] = $<num>3;
+                            shape[1] = $<num>6; 
+                            $$=makeIdNodeDecl($<ch>1,2,shape);
+                        }                      
         ;      
 
 
@@ -123,6 +135,7 @@ expr : expr PLUS expr {$$ = makeOperatorNode("+",$<no>1,$<no>3);}
     | expr MINUS expr {$$ = makeOperatorNode("-",$<no>1,$<no>3);}
     | expr MUL expr {$$ = makeOperatorNode("*",$<no>1,$<no>3);}
     | expr DIV expr {$$ = makeOperatorNode("/",$<no>1,$<no>3);}
+    | expr MOD expr {$$ = makeOperatorNode("%",$<no>1,$<no>3);}
     | expr LT expr {$$ = makeOperatorNode("<",$<no>1,$<no>3); $$->type = booltype;}
     | expr GT expr {$$ = makeOperatorNode(">",$<no>1,$<no>3); $$->type = booltype;}
     | expr NE expr {$$ = makeOperatorNode("!=",$<no>1,$<no>3); $$->type = booltype;}
@@ -130,10 +143,15 @@ expr : expr PLUS expr {$$ = makeOperatorNode("+",$<no>1,$<no>3);}
     | expr GTE expr {$$ = makeOperatorNode(">=",$<no>1,$<no>3); $$->type = booltype;}
     | expr EQ expr {$$ = makeOperatorNode("==",$<no>1,$<no>3); $$->type = booltype;}
     | '(' expr ')' {$$=$<no>2;}
-    | ID {$$=makeIdNode($<ch>1);}
+    | Identifier {$$=$<no>1;}
     | NUM {$$=makeNumberNode($<num>1);}
     | STRING {$$=$<no>1;}
     ;
+
+Identifier : ID                       {$$=makeIdNode($<ch>1,NULL,NULL);}
+           | ID'[' expr ']'            {$$=makeIdNode($<ch>1,$<no>3,NULL);}     
+           | ID'[' expr ']''[' expr ']' {$$=makeIdNode($<ch>1,$<no>3,$<no>6);}
+           ;
 %%
 
 int yyerror(char const *s)

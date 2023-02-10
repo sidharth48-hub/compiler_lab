@@ -43,6 +43,7 @@ continue        {return CONTINUE;}
 "-"             {return MINUS;}
 "*"             {return MUL;}
 "/"             {return DIV;}
+"%"             {return MOD;}
 "="             {return EQUAL;}
 ";"             {return SEMICOLON;}
 "<"             {return LT;}

@@ -72,17 +72,18 @@ extern int yydebug;
     NUM = 278,
     ID = 279,
     STRING = 280,
-    PLUS = 281,
-    MINUS = 282,
-    MUL = 283,
-    DIV = 284,
-    GTE = 285,
-    LTE = 286,
-    LT = 287,
-    GT = 288,
-    NE = 289,
-    EQ = 290,
-    EQUAL = 291
+    GTE = 281,
+    LTE = 282,
+    LT = 283,
+    GT = 284,
+    NE = 285,
+    EQ = 286,
+    PLUS = 287,
+    MINUS = 288,
+    MUL = 289,
+    DIV = 290,
+    MOD = 291,
+    EQUAL = 292
   };
 #endif
 /* Tokens.  */
@@ -109,17 +110,18 @@ extern int yydebug;
 #define NUM 278
 #define ID 279
 #define STRING 280
-#define PLUS 281
-#define MINUS 282
-#define MUL 283
-#define DIV 284
-#define GTE 285
-#define LTE 286
-#define LT 287
-#define GT 288
-#define NE 289
-#define EQ 290
-#define EQUAL 291
+#define GTE 281
+#define LTE 282
+#define LT 283
+#define GT 284
+#define NE 285
+#define EQ 286
+#define PLUS 287
+#define MINUS 288
+#define MUL 289
+#define DIV 290
+#define MOD 291
+#define EQUAL 292
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -132,7 +134,7 @@ union YYSTYPE
     char* ch;
     int num;
 
-#line 136 "y.tab.h"
+#line 138 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
