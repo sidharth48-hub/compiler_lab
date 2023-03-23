@@ -186,6 +186,7 @@ struct tnode* makeNumberNode(int n)
     temp = (struct tnode*)malloc(sizeof(struct tnode));
     temp->val = n;
     temp->nodetype=0;//constant
+    temp->type = intType;
     temp->varname = NULL;
     temp->left = NULL;
     temp->right = NULL;
@@ -197,6 +198,7 @@ struct tnode* makeIdNode(char *str,struct tnode *left,struct tnode *right)
     struct tnode *temp;
     temp = (struct tnode*)malloc(sizeof(struct tnode));
     temp->nodetype=1;//variable
+    temp->type = stringType;
     temp->varname = str;
     temp->left = left;
     temp->right = right;

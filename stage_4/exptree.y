@@ -38,6 +38,7 @@
 %%
 
 program : START Declarations Slist END SEMICOLON {$$=$<no>3;
+                                                  printGsymbolTable();
                                                   LinkIdTable($<no>3);
                                                   codegenerator($<no>3);
                                                   exit(1);
