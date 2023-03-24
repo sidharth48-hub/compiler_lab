@@ -55,7 +55,9 @@ int codegen(struct tnode *root,FILE *fptr)
                          return -1;
 
         case NODE_CONTINUE: callcontinue(fptr);
-                            return -1;                                                                                                    
+                            return -1;
+        case NODE_BREAK_POINT: fprintf(fptr,"BRKP\n");
+                               return -1;                                                                                                                        
     }
 
 
@@ -64,7 +66,7 @@ int codegen(struct tnode *root,FILE *fptr)
     
     switch(root->nodetype)
     {
-        case NODE_READ: callread(l,fptr);
+        case NODE_READ: callread(root,l,fptr);
                         return -1;
 
         case NODE_WRITE: callwrite(root,l,fptr);

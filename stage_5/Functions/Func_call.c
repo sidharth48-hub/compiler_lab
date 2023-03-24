@@ -1,3 +1,6 @@
+int num_of_params;
+int num_of_given_params;
+
 
 void push_used_reg(FILE *fptr)
 {
@@ -65,7 +68,7 @@ void pop_arglist(struct tnode *root,FILE *fptr)
         pop_arglist(root->left,fptr); 
 }
 
-void CheckFuncVar(struct tnode *root, struct Paramstruct *list)
+void CheckFuncVar(struct Paramstruct *list,struct tnode *root)
 {
     int type;
     struct Gsymbol *temp1,*temp2;
@@ -79,6 +82,8 @@ void CheckFuncVar(struct tnode *root, struct Paramstruct *list)
                             exit(1);
                           } 
                           list=list->next;
+                          num_of_params--;
+                          num_of_given_params--;
                           break;
         case NODE_CONSTANT:type = intType;
                            if(type!=list->type)
@@ -87,6 +92,8 @@ void CheckFuncVar(struct tnode *root, struct Paramstruct *list)
                             exit(1);
                            }
                            list=list->next;
+                           num_of_params--;
+                           num_of_given_params--;
                            break;
         case NODE_VARIABLE:if(root->lentry!=NULL)
                            {
@@ -108,6 +115,8 @@ void CheckFuncVar(struct tnode *root, struct Paramstruct *list)
                             exit(1);
                           }
                            list=list->next;
+                           num_of_params--;
+                           num_of_given_params--;
                            break;
         case NODE_VAR_ARRAY:temp1 = Lookup(root->varname);
                             if(temp1==NULL)
@@ -123,6 +132,8 @@ void CheckFuncVar(struct tnode *root, struct Paramstruct *list)
                                 exit(1);
                             }
                             list=list->next;
+                            num_of_params--;
+                            num_of_given_params--;
                             break;
         case NODE_VAR_FUNC_CALL:temp2 = Lookup(root->varname);
                                type = temp2->type;
@@ -132,36 +143,71 @@ void CheckFuncVar(struct tnode *root, struct Paramstruct *list)
                                     exit(1);
                                }
                                list=list->next;
+                               num_of_params--;
+                               num_of_given_params--;
                                break;
         default: if(root->nodetype!=NODE_ARGLIST)
-                    list=list->next;
+                 {
                     type = root->type;
                     if(type!=list->type)
                     {
                         printf("Error!!! Type of paramters do not match the declaration\n");
                         exit(1);
                     }
+                    list=list->next;
+                    num_of_params--;
+                    num_of_given_params--;
+                 }    
                 break;
     }
-
     
-    if(list==NULL && root->left!=NULL || root->right!=NULL)
+    if(list==NULL && num_of_params==0 && num_of_given_params!=0)
     {
         printf("Error!!! No of paramters exceeds\n");
         exit(1);
     }
-    
-    if(root->left==NULL && root->right==NULL && list!=NULL)
+
+    if(num_of_params!=0 && num_of_given_params==0)
     {
         printf("Error!!! less no of parameters\n");
         exit(1);
-    }
-
+    } 
 
     if(root->left!=NULL && root->nodetype==NODE_ARGLIST)
-        CheckFuncVar(root->left,list);
+        CheckFuncVar(list,root->left);
     if(root->right!=NULL && root->nodetype==NODE_ARGLIST)   
-        CheckFuncVar(root->right,list);        
+        CheckFuncVar(list,root->right);           
+}
+
+void numParams(struct Paramstruct *list)
+{
+    while(list!=NULL)
+    {
+        num_of_params++;
+        list=list->next;
+    }
+}
+
+void numGivenParams(struct tnode *root)
+{
+    switch(root->nodetype)
+    {
+        case NODE_CONSTANT:
+        case NODE_STRINGS:
+        case NODE_VARIABLE:
+        case NODE_VAR_FUNC_CALL:
+        case NODE_VAR_ARRAY:
+        default: if(root->nodetype!=NODE_ARGLIST)
+                 {
+                    num_of_given_params++;
+                    return;
+                 }   
+    }
+
+    if(root->left!=NULL)
+        numGivenParams(root->left);
+    if(root->right!=NULL)    
+        numGivenParams(root->right);
 }
 
 void TypeCheckFunc_call(struct tnode *root)
@@ -173,8 +219,24 @@ void TypeCheckFunc_call(struct tnode *root)
         printf("Error!! Wrong function name\n");
         exit(1);
     }
-      
-    CheckFuncVar(root,temp->paramlist);
+    
+    struct Paramstruct *paramlist = temp->paramlist;
+    
+    num_of_params = 0;
+    numParams(paramlist);
+
+    struct tnode *arglist = root->left;
+    
+    if(paramlist!=NULL && arglist==NULL)
+    {
+        printf("Error!!! No parameters are provided for function call of %s",root->varname);
+        exit(1);
+    }
+
+    num_of_given_params=0;
+    numGivenParams(arglist);
+
+    CheckFuncVar(paramlist,arglist);
 }
 
 void function_call_AtoB(struct tnode *root,FILE *fptr)
@@ -201,7 +263,7 @@ int function_call(struct tnode *root,FILE *fptr)
 {
     int no_used_reg = reg;//No of used registers
     
-    //TypeCheckFunc_call(root);//Typechecking the paramters provided
+    TypeCheckFunc_call(root);//Typechecking the paramters provided
 
     function_call_AtoB(root,fptr);//calling function B from function A
     

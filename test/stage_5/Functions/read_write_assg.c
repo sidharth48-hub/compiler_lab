@@ -24,8 +24,19 @@ void callwrite(struct tnode *root,int new_reg,FILE *fptr)
     fprintf(fptr,"POP R0\n");
 }
 
-void callread(int new_reg,FILE *fptr)
+void callread(struct tnode *root,int new_reg,FILE *fptr)
 {
+    switch(root->left->nodetype)
+    {
+        case NODE_VARIABLE:
+        case NODE_VAR_ARRAY:break;
+        case NODE_CONSTANT:
+        case NODE_STRINGS:
+        case NODE_VAR_FUNC_CALL:
+        default: printf("Error!!! parameter of read is not a variable\n");
+                 exit(1);
+    }
+
     int r = getReg();
     fprintf(fptr,"MOV R%d ,\"Read\"\n",r);
     fprintf(fptr,"PUSH R%d\n",r);
@@ -35,8 +46,6 @@ void callread(int new_reg,FILE *fptr)
     fprintf(fptr,"PUSH R%d\n",r);
     fprintf(fptr,"PUSH R%d\n",r);
     fprintf(fptr,"CALL 0\n");
-
-    fprintf(fptr,"BRKP\n");
     
     fprintf(fptr,"POP R0\n");//return value
     fprintf(fptr,"POP R0\n");

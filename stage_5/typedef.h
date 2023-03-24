@@ -43,6 +43,7 @@
 #define NODE_AND 41
 #define NODE_OR 42
 #define NODE_NOT 43
+#define NODE_BREAK_POINT 44
 
 //////TYPE OF THE VARIABLE//////////////
 #define booltype 0

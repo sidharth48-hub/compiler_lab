@@ -35,7 +35,7 @@
 %type <no> LdeclBlock LDecList LDecl IdList
 %type <no> program Slist InputStmt OutputStmt AssgStmt expr stmt Ifstmt Whilestmt breakstmt continuestmt dowhilestmt repuntilstmt Identifier MainBlock ArgList
 %type <num> Type
-%token START END DECL ENDDECL INT STR SEMICOLON RETURN
+%token START END DECL ENDDECL INT STR SEMICOLON RETURN BREAKPOINT
 %token READ WRITE 
 %token IF THEN ELSE ENDIF
 %token WHILE DO ENDWHILE REPEAT UNTIL BREAK CONTINUE
@@ -247,6 +247,7 @@ expr : expr PLUS expr {$$ = makeOperatorNode(NODE_ADD,"+",$<no>1,$<no>3);$$->typ
     | Identifier {$$=$<no>1;}
     | NUM {$$=makeNumberNode(NODE_CONSTANT,$<num>1);}
     | STRING {$$=$<no>1;}
+    | BREAKPOINT {$$=makeIdNode(NODE_BREAK_POINT,$<ch>1,NULL,NULL);}
     ;
 
 ArgList : ArgList ',' expr {$$=makeConnectorNode(NODE_ARGLIST,".",$<no>1,$<no>3);}

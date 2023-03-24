@@ -67,6 +67,23 @@ void TypeCheckCond(struct tnode *root)
 
 }
 
+void checkForInfiniteLoop(struct tnode *root)
+{
+    switch(root->nodetype)
+    {
+        case NODE_STRINGS:
+        case NODE_CONSTANT:
+        case NODE_VARIABLE:
+        case NODE_VAR_ARRAY:
+        case NODE_VAR_FUNC_CALL:
+        case NODE_ADD:
+        case NODE_SUB:
+        case NODE_MUL:
+        case NODE_DIV:printf("Errro!!! Infinite loop detected!!!\n");
+                      exit(1);
+    }
+}
+
 int ValidateCond(struct tnode *root,int nodetype,int label_no,FILE *fptr)
 {
     if(root->type!=booltype)
@@ -138,6 +155,7 @@ void ifBlock(struct tnode *root,FILE *fptr)
 
 int whileCondBlock(struct tnode *root,FILE *fptr)
 {
+    checkForInfiniteLoop(root);
     TypeCheckCond(root);
     int lno = ValidateCond(root,NODE_WHILE,0,fptr);
     return lno;
@@ -161,6 +179,7 @@ void whileBlock(struct tnode *root,FILE *fptr)
 
 void doWhileCondBlock(struct tnode *root, int lno,FILE *fptr)
 {
+    checkForInfiniteLoop(root);
     TypeCheckCond(root);
     
     ValidateCond(root,NODE_DO,lno,fptr);
@@ -186,6 +205,7 @@ void doWhileBlock(struct tnode *root,FILE *fptr)
 
 void repuntilCondBlock(struct tnode *root, int lno,FILE *fptr)
 {
+    checkForInfiniteLoop(root);
     TypeCheckCond(root);
 
     ValidateCond(root,NODE_REPEAT,lno,fptr);

@@ -253,7 +253,7 @@ void function_call_AtoB(struct tnode *root,FILE *fptr);
 
 int function_call(struct tnode *root,FILE *fptr);
 
-void CheckFuncVar(struct tnode *root, struct Paramstruct *list);
+void CheckFuncVar(struct Paramstruct *list,struct tnode *root);
 
 void TypeCheckFunc_call(struct tnode *root);
 
@@ -262,7 +262,7 @@ void TypeCheckFunc_call(struct tnode *root);
 
 ////////////READ_WRITE_ASSG///////////////////////
 
-void callread(int reg,FILE *fptr);
+void callread(struct tnode *root,int reg,FILE *fptr);
 
 void callwrite(struct tnode *root,int reg,FILE *fptr);
 
@@ -293,6 +293,8 @@ void repuntilBlock(struct tnode *root,FILE *fptr);
 int ValidateCond(struct tnode *root,int nodetype,int label_no,FILE *fptr);
 
 void TypeCheckCond(struct tnode *root);
+
+void checkForInfiniteLoop(struct tnode *root);
 
 ///////////VARIABLE OPERATOR FUNCTIONS/////////////
 

@@ -270,8 +270,6 @@ void create_functions(struct tnode *root,FILE *fptr)
         struct tnode *ret_stmt = body->right;
 
         fprintf(fptr,"F%d:\n",f_label);
-
-        fprintf(fptr,"BRKP\n");
         
         fprintf(fptr,"PUSH BP\n");
         fprintf(fptr,"MOV BP,SP\n");
