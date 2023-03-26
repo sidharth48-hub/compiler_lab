@@ -1,4 +1,7 @@
 ///////////FUNCTION BLOCK/////////////////
+int num_of_params;
+int num_of_given_params;
+
 
 struct tnode* createFuncTree(char *c,int nodetype,struct tnode *left,struct tnode *right)
 {
@@ -53,24 +56,38 @@ struct tnode* makeReturnNode(int nodetype,struct tnode *l)
     return temp;   
 }
 
-void CheckNumParams(struct tnode *paramtree,struct Paramstruct *list)
+void no_of_Params(struct Paramstruct *list)
 {
-    if(paramtree==NULL && list!=NULL)
+    while(list!=NULL)
     {
-        printf("Error!!! No of paramters do not match\n");
-        exit(1);
+        num_of_params++;
+        list=list->next;
+    }
+}
+
+void no_of_given_Params(struct tnode *root)
+{
+    switch(root->nodetype)
+    {
+        case NODE_PARAM:if(root->nodetype!=NODE_CONNECTOR)
+                        {
+                            num_of_given_params++;
+                            return;
+                        }   
     }
 
+    if(root->left!=NULL)
+        no_of_given_Params(root->left);
+    if(root->right!=NULL)    
+        no_of_given_Params(root->right);
+}
+
+void CheckNumParams(struct tnode *paramtree,struct Paramstruct *list)
+{
     if(paramtree->nodetype==NODE_PARAM)
     {
         int type=paramtree->type;
         char *name = paramtree->left->varname;
-
-        if(list==NULL)
-        {
-            printf("Error!!! No of parameters in declared function is wrong\n");
-            exit(1);
-        }
         
         if(list->type != type)
         {
@@ -150,9 +167,24 @@ void TypeCheckFunction(struct tnode *root)
         printf("Error!!! No of parameters in declared function is wrong\n");
         exit(1);
     }
+    
+    if(paramtree!=NULL && list!=NULL)
+    {
+        num_of_params = 0;
+        no_of_Params(list);
 
-    CheckNumParams(paramtree,list);
+        num_of_given_params = 0;
+        no_of_given_Params(paramtree);
 
+        //printf("%d %d %s\n",num_of_params,num_of_given_params,root->varname);
+
+        if(num_of_params!=num_of_given_params)
+        {
+            printf("Error!!! No of paramters given in function %s is wrong\n",root->varname);
+            exit(1);
+        }        
+        CheckNumParams(paramtree,list);
+    }
 }
 
 void TypeCheckRet(struct tnode *root,int functype)

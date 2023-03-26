@@ -16,6 +16,21 @@ int getfLabel()
     flabel++;
 }
 
+struct Paramstruct *ParamLookup(char *name)
+{
+    struct Paramstruct *temp = phead;
+
+    while(temp!=NULL)
+    {
+        if(strcmp(temp->name,name)==0)
+        {
+            return temp;
+        }
+        temp=temp->next;
+    }
+    return NULL;
+}
+
 void createParamNode(char *name,int type)
 {
     struct Paramstruct* node;
@@ -43,7 +58,15 @@ void createParamList(struct tnode *root)
 {
     if(root->nodetype==NODE_PARAM)
     {
-        createParamNode(root->left->varname,root->type);    
+        if(root->left->varname!=NULL)
+        {
+            if(ParamLookup(root->left->varname)!=NULL)
+            {
+                printf("Error!!! parameters with same name in function declaration\n");
+                exit(1);
+            }
+            createParamNode(root->left->varname,root->type);
+        }        
     }
     if(root->left!=NULL)
         createParamList(root->left);

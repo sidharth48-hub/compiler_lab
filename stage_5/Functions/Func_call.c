@@ -82,8 +82,6 @@ void CheckFuncVar(struct Paramstruct *list,struct tnode *root)
                             exit(1);
                           } 
                           list=list->next;
-                          num_of_params--;
-                          num_of_given_params--;
                           break;
         case NODE_CONSTANT:type = intType;
                            if(type!=list->type)
@@ -92,8 +90,6 @@ void CheckFuncVar(struct Paramstruct *list,struct tnode *root)
                             exit(1);
                            }
                            list=list->next;
-                           num_of_params--;
-                           num_of_given_params--;
                            break;
         case NODE_VARIABLE:if(root->lentry!=NULL)
                            {
@@ -115,8 +111,6 @@ void CheckFuncVar(struct Paramstruct *list,struct tnode *root)
                             exit(1);
                           }
                            list=list->next;
-                           num_of_params--;
-                           num_of_given_params--;
                            break;
         case NODE_VAR_ARRAY:temp1 = Lookup(root->varname);
                             if(temp1==NULL)
@@ -132,8 +126,6 @@ void CheckFuncVar(struct Paramstruct *list,struct tnode *root)
                                 exit(1);
                             }
                             list=list->next;
-                            num_of_params--;
-                            num_of_given_params--;
                             break;
         case NODE_VAR_FUNC_CALL:temp2 = Lookup(root->varname);
                                type = temp2->type;
@@ -143,8 +135,6 @@ void CheckFuncVar(struct Paramstruct *list,struct tnode *root)
                                     exit(1);
                                }
                                list=list->next;
-                               num_of_params--;
-                               num_of_given_params--;
                                break;
         default: if(root->nodetype!=NODE_ARGLIST)
                  {
@@ -155,23 +145,9 @@ void CheckFuncVar(struct Paramstruct *list,struct tnode *root)
                         exit(1);
                     }
                     list=list->next;
-                    num_of_params--;
-                    num_of_given_params--;
                  }    
                 break;
     }
-    
-    if(list==NULL && num_of_params==0 && num_of_given_params!=0)
-    {
-        printf("Error!!! No of paramters exceeds\n");
-        exit(1);
-    }
-
-    if(num_of_params!=0 && num_of_given_params==0)
-    {
-        printf("Error!!! less no of parameters\n");
-        exit(1);
-    } 
 
     if(root->left!=NULL && root->nodetype==NODE_ARGLIST)
         CheckFuncVar(list,root->left);
@@ -221,10 +197,6 @@ void TypeCheckFunc_call(struct tnode *root)
     }
     
     struct Paramstruct *paramlist = temp->paramlist;
-    
-    num_of_params = 0;
-    numParams(paramlist);
-
     struct tnode *arglist = root->left;
     
     if(paramlist!=NULL && arglist==NULL)
@@ -233,10 +205,29 @@ void TypeCheckFunc_call(struct tnode *root)
         exit(1);
     }
 
+    if(paramlist==NULL && arglist!=NULL)
+    {
+        printf("Error!!! No parameters are provided for function call of %s",root->varname);
+        exit(1);
+    }
+    
+    num_of_params = 0;
     num_of_given_params=0;
-    numGivenParams(arglist);
 
-    CheckFuncVar(paramlist,arglist);
+    if(paramlist!=NULL && arglist!=NULL)
+    {
+        numParams(paramlist); //To find the number of parameters in the function global declaration 
+        
+        numGivenParams(arglist);//To find the number of parameters in the function given in code
+        
+        if(num_of_params!=num_of_given_params)
+        {
+            printf("Error!!! No of parameters given in function call of function %s is wrong\n",root->varname);
+            exit(1);
+        }
+
+        CheckFuncVar(paramlist,arglist);
+    }
 }
 
 void function_call_AtoB(struct tnode *root,FILE *fptr)

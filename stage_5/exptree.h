@@ -74,6 +74,8 @@ int getBind(int mem);
 
 int getfLabel();
 
+struct Paramstruct *ParamLookup(char *name);
+
 void createParamNode(char *name,int type);
 
 void createParamList(struct tnode *root);
@@ -149,6 +151,10 @@ struct tnode* makeReturnNode(int nodetype,struct tnode *l);
 void TypeCheckFunction(struct tnode *root);
 
 void CheckNumParams(struct tnode *paramtree,struct Paramstruct *list);
+
+void numParams(struct Paramstruct *list);
+
+void numGivenParams(struct tnode *root);
 
 void push_localVar(struct tnode *root,FILE *fptr);
 

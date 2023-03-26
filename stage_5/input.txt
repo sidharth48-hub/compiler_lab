@@ -1,53 +1,122 @@
 decl
-  int n,arr[10],i,j,dup, BubbleSort(int first, int last);
+  int a,b,n,arr[10];
+  int swap(int index, int newindex);
+  int readarr(int temp);
+  int writearr(int temp);
+  int partition (int low, int high);
+  int quicksort(int mid,int low,int high);
 enddecl
 
-int BubbleSort(int first, int last)
+int swap(int index ,int newindex)
 {
   decl
-    int temp;
+    int s;
   enddecl
 
   begin
-    if((first < last) && (last > 0)) then
+    s = arr[index];
+    arr[index] = arr[newindex];
+    arr[newindex] = s;
 
-      if(arr[first] > arr[first+1]) then
-        temp = arr[first];
-        arr[first] = arr[first+1];
-        arr[first+1] = temp;
+    return s;
+  end
+}
+
+int readarr(int temp)
+{
+  decl
+    int count;
+  enddecl
+
+  begin
+    count=0;
+
+    while(count < temp) do
+      read(arr[count]);
+      count=count+1;
+    endwhile;
+
+    return count;
+  end
+}
+
+int writearr(int temp)
+{
+  decl
+    int count;
+  enddecl
+
+  begin
+    count = 0;
+
+    while(count < temp) do
+      write(arr[count]);
+      count = count+1;
+    endwhile;
+
+    return count;
+  end
+}
+
+int partition (int low, int high)
+{
+  decl
+    int pivot,t;
+    int i,j;
+  enddecl
+
+  begin
+    pivot = arr[high];
+    j = low;
+    i = low;
+
+    while(i < high) do
+      if (arr[i] <= pivot) then
+      t = swap (i , j);
+      j = j+1;
       endif;
+      i=i+1;
+    endwhile;
 
-      dup = BubbleSort(first+1, last);
-      dup = BubbleSort(first, last-1);
+    i = swap (j , high);
+
+    return j;
+  end
+}
+
+
+
+int quicksort (int mid,int low,int high)
+{
+  decl
+    int pp,temp,t;
+  enddecl
+
+  begin
+
+    if (low < high) then
+      pp = partition (low , high);
+      temp = quicksort(quicksort(0,low,pp-1),pp+1,high);
     endif;
 
-    return 0;
+    return 1;
   end
 }
 
 int main()
 {
   decl
-    int r;
+    int junk;
+    int temp;
   enddecl
 
   begin
+
     read(n);
+    junk = readarr(n);
+    temp = quicksort(0,0,n-1);
+    junk = writearr(n);
 
-    i=0;
-    while(i<n) do
-      read(arr[i]);
-      i = i+1;
-    endwhile;
-
-    r = BubbleSort(0,n-1);
-
-    i=0;
-    while(i<n) do
-      write(arr[i]);
-      i = i+1;
-    endwhile;
-
-    return 0;
+    return junk;
   end
 }

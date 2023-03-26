@@ -34,7 +34,7 @@ repeat          {return REPEAT;}
 until           {return UNTIL;}
 break           {return BREAK;}
 continue        {return CONTINUE;}
-breakpoint      {return BREAKPOINT}
+breakpoint      {return BREAKPOINT;}
 {numbers}       {yylval.num = atoi(yytext); return NUM;}
 {identifier}    {yylval.ch = strdup(yytext); return ID;}
 {strings}       {yylval.no = makeStringsNode(NODE_STRINGS,strdup(yytext)); return STRING;}

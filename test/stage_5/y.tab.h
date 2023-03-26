@@ -57,37 +57,38 @@ extern int yydebug;
     STR = 263,
     SEMICOLON = 264,
     RETURN = 265,
-    READ = 266,
-    WRITE = 267,
-    IF = 268,
-    THEN = 269,
-    ELSE = 270,
-    ENDIF = 271,
-    WHILE = 272,
-    DO = 273,
-    ENDWHILE = 274,
-    REPEAT = 275,
-    UNTIL = 276,
-    BREAK = 277,
-    CONTINUE = 278,
-    NUM = 279,
-    ID = 280,
-    STRING = 281,
-    OR = 282,
-    AND = 283,
-    GTE = 284,
-    LTE = 285,
-    LT = 286,
-    GT = 287,
-    NE = 288,
-    EQ = 289,
-    PLUS = 290,
-    MINUS = 291,
-    MUL = 292,
-    DIV = 293,
-    MOD = 294,
-    NOT = 295,
-    EQUAL = 296
+    BREAKPOINT = 266,
+    READ = 267,
+    WRITE = 268,
+    IF = 269,
+    THEN = 270,
+    ELSE = 271,
+    ENDIF = 272,
+    WHILE = 273,
+    DO = 274,
+    ENDWHILE = 275,
+    REPEAT = 276,
+    UNTIL = 277,
+    BREAK = 278,
+    CONTINUE = 279,
+    NUM = 280,
+    ID = 281,
+    STRING = 282,
+    OR = 283,
+    AND = 284,
+    GTE = 285,
+    LTE = 286,
+    LT = 287,
+    GT = 288,
+    NE = 289,
+    EQ = 290,
+    PLUS = 291,
+    MINUS = 292,
+    MUL = 293,
+    DIV = 294,
+    MOD = 295,
+    NOT = 296,
+    EQUAL = 297
   };
 #endif
 /* Tokens.  */
@@ -99,37 +100,38 @@ extern int yydebug;
 #define STR 263
 #define SEMICOLON 264
 #define RETURN 265
-#define READ 266
-#define WRITE 267
-#define IF 268
-#define THEN 269
-#define ELSE 270
-#define ENDIF 271
-#define WHILE 272
-#define DO 273
-#define ENDWHILE 274
-#define REPEAT 275
-#define UNTIL 276
-#define BREAK 277
-#define CONTINUE 278
-#define NUM 279
-#define ID 280
-#define STRING 281
-#define OR 282
-#define AND 283
-#define GTE 284
-#define LTE 285
-#define LT 286
-#define GT 287
-#define NE 288
-#define EQ 289
-#define PLUS 290
-#define MINUS 291
-#define MUL 292
-#define DIV 293
-#define MOD 294
-#define NOT 295
-#define EQUAL 296
+#define BREAKPOINT 266
+#define READ 267
+#define WRITE 268
+#define IF 269
+#define THEN 270
+#define ELSE 271
+#define ENDIF 272
+#define WHILE 273
+#define DO 274
+#define ENDWHILE 275
+#define REPEAT 276
+#define UNTIL 277
+#define BREAK 278
+#define CONTINUE 279
+#define NUM 280
+#define ID 281
+#define STRING 282
+#define OR 283
+#define AND 284
+#define GTE 285
+#define LTE 286
+#define LT 287
+#define GT 288
+#define NE 289
+#define EQ 290
+#define PLUS 291
+#define MINUS 292
+#define MUL 293
+#define DIV 294
+#define MOD 295
+#define NOT 296
+#define EQUAL 297
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -141,7 +143,7 @@ union YYSTYPE
     char* ch;
     int num;
 
-#line 145 "y.tab.h"
+#line 147 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

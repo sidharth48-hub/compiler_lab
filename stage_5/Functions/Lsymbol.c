@@ -50,6 +50,11 @@ void LsymbolEntryParam(struct tnode *root)
 {
     if(root->nodetype == NODE_PARAM)
     {
+        if(root->left->varname!=NULL && LLookup(root->left->varname,Lhead)!=NULL)
+        {
+            printf("Error!!! Local variables with same name\n");
+            exit(1);
+        }
         LInstall(root->left->varname,root->type,root->nodetype);
     }
 
@@ -63,6 +68,11 @@ void LsymbolEntryDeclVar(int type,struct tnode *root)
 {
     if(root->nodetype == NODE_VARIABLE)
     {
+        if(root->varname!=NULL && LLookup(root->varname,Lhead)!=NULL)
+        {
+            printf("Error!!! Local variables with same name\n");
+            exit(1);
+        }
         LInstall(root->varname,type,root->nodetype);
     }
 
@@ -161,16 +171,6 @@ void printLocalTable(struct tnode *root)
         printLocalTable(root->left);
     if(root->right!=NULL)
         printLocalTable(root->right);
-}
-
-struct Lsymbol* MsymbolEntry(struct tnode *root)
-{
-    Lhead = NULL;
-    
-    LocalBind = 1;
-    LsymbolEntryDecl(root);
-
-    return Lhead;
 }
 
 
