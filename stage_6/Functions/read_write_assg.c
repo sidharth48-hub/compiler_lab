@@ -1,18 +1,23 @@
 void callwrite(struct tnode *root,int new_reg,FILE *fptr)
 {
-    int r = getReg();
-    fprintf(fptr,"MOV R%d ,\"Write\"\n",r);
-    fprintf(fptr,"PUSH R%d\n",r);
-    fprintf(fptr,"MOV R%d ,-2\n",r);
-    fprintf(fptr,"PUSH R%d\n",r);
+
+    fprintf(fptr,"MOV R0 ,\"Write\"\n");
+    fprintf(fptr,"PUSH R0\n");
+    fprintf(fptr,"MOV R0 ,-2\n");
+    fprintf(fptr,"PUSH R0\n");
     
-    if(root->left->nodetype==NODE_VARIABLE || root->left->nodetype==NODE_VAR_ARRAY)
-        fprintf(fptr,"MOV R%d,[R%d]\n",new_reg,new_reg);
+    switch(root->left->nodetype)
+    {
+        case NODE_VARIABLE:
+        case NODE_VAR_ARRAY:
+        case NODE_FIELD:fprintf(fptr,"MOV R%d,[R%d]\n",new_reg,new_reg);
+                        break;
+    }
     
     
     fprintf(fptr,"PUSH R%d\n",new_reg);
-    fprintf(fptr,"PUSH R%d\n",r);
-    fprintf(fptr,"PUSH R%d\n",r);
+    fprintf(fptr,"PUSH R0\n");
+    fprintf(fptr,"PUSH R0\n");
     
     freeReg();
     fprintf(fptr,"CALL 0\n");
@@ -22,6 +27,7 @@ void callwrite(struct tnode *root,int new_reg,FILE *fptr)
     fprintf(fptr,"POP R0\n");
     fprintf(fptr,"POP R0\n");
     fprintf(fptr,"POP R0\n");
+
 }
 
 void callread(struct tnode *root,int new_reg,FILE *fptr)
@@ -37,14 +43,14 @@ void callread(struct tnode *root,int new_reg,FILE *fptr)
                  exit(1);
     }
 
-    int r = getReg();
-    fprintf(fptr,"MOV R%d ,\"Read\"\n",r);
-    fprintf(fptr,"PUSH R%d\n",r);
-    fprintf(fptr,"MOV R%d ,-1\n",r);
-    fprintf(fptr,"PUSH R%d\n",r);
+    
+    fprintf(fptr,"MOV R0 ,\"Read\"\n");
+    fprintf(fptr,"PUSH R0\n");
+    fprintf(fptr,"MOV R0 ,-1\n");
+    fprintf(fptr,"PUSH R0\n");
     fprintf(fptr,"PUSH R%d\n",new_reg);
-    fprintf(fptr,"PUSH R%d\n",r);
-    fprintf(fptr,"PUSH R%d\n",r);
+    fprintf(fptr,"PUSH R0\n");
+    fprintf(fptr,"PUSH R0\n");
     fprintf(fptr,"CALL 0\n");
     
     fprintf(fptr,"POP R0\n");//return value
@@ -60,7 +66,7 @@ void TypeCheckAssg(struct tnode *root)
     struct tnode *left = root->left;//variable 1
     struct tnode *right = root->right;//variable 2
     
-    int left_type,right_type;
+    struct Typetable *left_type,*right_type;
     
     struct Gsymbol *temp1,*temp2;
     switch(left->nodetype)
@@ -78,6 +84,9 @@ void TypeCheckAssg(struct tnode *root)
         case NODE_VAR_ARRAY:temp1 = Lookup(left->varname);
                             left_type = temp1->type;
                             break;
+        case NODE_FIELD: findTypeField(root);
+                         left_type = Field_head;
+                         break;                                                                           
         default: printf("Error!!! Only variable or array allowed in left side of = operator\n");
                  exit(1);                                                                                                   
     }
@@ -86,8 +95,15 @@ void TypeCheckAssg(struct tnode *root)
     {
         case NODE_STRINGS:right_type = stringType;
                           break;
-        case NODE_CONSTANT:right_type = intType;
-                           break;
+        case NODE_CONSTANT:
+        case NODE_INITIALIZE:right_type = intType;
+                             break;
+        case NODE_ALLOC: if(left_type == intType || left_type == stringType)
+                         {
+                            printf("Error!!! Types other other int and string is only allowed in alloc\n");
+                            exit(1);
+                         }
+                         return;
         case NODE_VARIABLE:if(right->lentry!=NULL)
                            {
                               right_type = right->lentry->type;
@@ -104,13 +120,23 @@ void TypeCheckAssg(struct tnode *root)
         case NODE_VAR_FUNC_CALL:temp2 = Lookup(right->varname);
                                right_type = temp2->type;
                                break;
+        case NODE_VAR_NULL: if(left_type == intType || left_type==stringType)
+                            {
+                                printf("Error!! NULL passed to non user defined types\n");
+                                exit(1);
+                            }
+                            left_type = right_type;
+                            break;
+        case NODE_FIELD: findTypeField(root);
+                         right_type = Field_head;
+                         break;                                          
         default: right_type = right->type;
                              break;                                                                                                   
     }
 
     if(left_type!=right_type)
     {
-        printf("Error!!! Wrong Types used in %s = %s\n",left->varname,right->varname);
+        printf("Error!!! Wrong Types used in %s(%s) = %s(%s)\n",left->varname,left_type->name,right->varname,right_type->name);
         exit(1);
     }
 }
@@ -123,13 +149,16 @@ void callassg(struct tnode *root,int l,int r,FILE *fptr)
 
     switch(right->nodetype)
     {
-        case NODE_VARIABLE: 
+        case NODE_VARIABLE:
+        case NODE_FIELD: 
         case NODE_VAR_ARRAY:fprintf(fptr,"MOV [R%d],[R%d]\n",l,r);
                             break;
 
+        case NODE_DYNAMIC:
         case NODE_CONSTANT:
         case NODE_STRINGS:
         case NODE_VAR_FUNC_CALL:
+        case NODE_VAR_NULL:
         default:fprintf(fptr,"MOV [R%d],R%d\n",l,r);
                 break;                     
     }

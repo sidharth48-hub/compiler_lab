@@ -2,6 +2,9 @@
 int num_of_params;
 int num_of_given_params;
 
+struct Paramstruct *paramlist;
+
+
 
 struct tnode* createFuncTree(char *c,int nodetype,struct tnode *left,struct tnode *right)
 {
@@ -28,20 +31,6 @@ struct tnode* makeFuncConnectorNode(int nodetype,struct tnode *l,struct tnode *r
 struct tnode* makeFuncIdNode(int nodetype,char *str,struct tnode *l,struct tnode *r)
 {
     return createFuncTree(str,nodetype,l,r);
-}
-
-struct tnode* makeFuncTypeNode(int type)
-{
-    int nodetype;
-    if(type==intType)
-    {
-        nodetype = NODE_INT;
-    }
-    else if(type==stringType)
-    {
-        nodetype = NODE_STRING;
-    }
-    return createFuncTree(NULL,nodetype,NULL,NULL);
 }
 
 struct tnode* makeReturnNode(int nodetype,struct tnode *l)
@@ -82,27 +71,26 @@ void no_of_given_Params(struct tnode *root)
         no_of_given_Params(root->right);
 }
 
-void CheckNumParams(struct tnode *paramtree,struct Paramstruct *list)
+void CheckNumParams(struct tnode *paramtree)
 {
     if(paramtree->nodetype==NODE_PARAM)
     {
-        int type=paramtree->type;
-        char *name = paramtree->left->varname;
-        
-        if(list->type != type)
+        struct Typetable *type=TLookup(paramtree->left->varname);
+
+        if(paramlist->type!=type)
         {
-            printf("Error!!! Type of paramters do not match global declaration\n");
+            printf("Error!!! Type of paramter %s do not match global declaration\n",paramtree->right->varname);
             exit(1);
         }
 
-        list=list->next;
+        paramlist=paramlist->next;
 
     }
     
     if(paramtree->left!=NULL)
-        CheckNumParams(paramtree->left,list);
+        CheckNumParams(paramtree->left);
     if(paramtree->right!=NULL)
-        CheckNumParams(paramtree->right,list);        
+        CheckNumParams(paramtree->right);        
 }
 
 void TypeCheckFunction(struct tnode *root)
@@ -110,16 +98,7 @@ void TypeCheckFunction(struct tnode *root)
     char *varname = root->varname;
     struct tnode *typenode = root->left;
 
-    int type;
-
-    if(typenode->nodetype==NODE_INT)
-    {
-        type=intType;
-    }
-    else if(typenode->nodetype==NODE_STRING)
-    {
-        type=stringType;
-    }
+    struct Typetable *type = TLookup(typenode->varname);
 
     
     struct tnode *paramtree = root->right->left;//from function defintion
@@ -127,7 +106,7 @@ void TypeCheckFunction(struct tnode *root)
     if(strcmp(varname,"main")==0)
     {
         
-        if(type!=intType)
+        if(strcmp(type->name,"int")!=0)
         {
             printf("Error!!! Type of main function is not correct\n");
             exit(1);
@@ -158,20 +137,20 @@ void TypeCheckFunction(struct tnode *root)
         exit(1);
     }
 
-    struct Paramstruct *list = func->paramlist;//from gsymbol table
+    paramlist = func->paramlist;//from gsymbol table
     
 
     ///parameter checking
-    if((list==NULL && paramtree!=NULL) || (list!=NULL && paramtree==NULL))
+    if((paramlist==NULL && paramtree!=NULL) || (paramlist!=NULL && paramtree==NULL))
     {
         printf("Error!!! No of parameters in declared function is wrong\n");
         exit(1);
     }
     
-    if(paramtree!=NULL && list!=NULL)
+    if(paramtree!=NULL && paramlist!=NULL)
     {
         num_of_params = 0;
-        no_of_Params(list);
+        no_of_Params(paramlist);
 
         num_of_given_params = 0;
         no_of_given_Params(paramtree);
@@ -181,15 +160,15 @@ void TypeCheckFunction(struct tnode *root)
         //     printf("Error!!! No of paramters given in function %s is wrong\n",root->varname);
         //     exit(1);
         // }        
-        CheckNumParams(paramtree,list);
+        CheckNumParams(paramtree);
     }
 }
 
-void TypeCheckRet(struct tnode *root,int functype)
+void TypeCheckRet(struct tnode *root,struct Typetable *functype)
 {
     if(root->nodetype==NODE_CONSTANT)
     {
-        if(intType!=functype)
+        if(strcmp("int",functype->name)!=0)
         {
             printf("Error!!! return type is different\n");
             exit(1);
@@ -256,7 +235,7 @@ void pop_localVar(struct tnode *root,FILE *fptr)
         pop_localVar(root->left,fptr);
 }
 
-void create_ret(struct tnode *root,int functype,FILE *fptr)
+void create_ret(struct tnode *root,struct Typetable *functype,FILE *fptr)
 {
     TypeCheckRet(root,functype);
     int reg_no = codegen(root,fptr); //reg_no of variable;
@@ -280,12 +259,13 @@ void create_functions(struct tnode *root,FILE *fptr)
 
         struct Gsymbol *temp = Lookup(root->varname);
         
-        int f_label,functype;
+        int f_label;
+        struct Typetable *functype;
 
         if(strcmp(root->varname,"main")==0)
         {
             f_label = 0;
-            functype = intType;
+            functype = TLookup("int");
         }
         else
         {

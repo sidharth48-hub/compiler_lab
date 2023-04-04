@@ -80,27 +80,7 @@ struct tnode* makeOperatorNode(int nodetype,char *c,struct tnode *l, struct tnod
     return temp;
 }
 
-struct tnode* makeMainTypeNode(int type)
-{
-    struct tnode *temp;
-    temp = (struct tnode*)malloc(sizeof(struct tnode));
-    temp->varname=NULL;
-    temp->type = type;
-    int nodetype;
-    if(type==intType)
-    {
-        nodetype = NODE_INT;
-    }
-    else if(type==stringType)
-    {
-        nodetype = NODE_STRING;
-    }
 
-    temp->nodetype = nodetype;
-    temp->left = NULL;
-    temp->right = NULL;
-    return temp;
-}
 
 /// IF_BLOCK ////////
 struct tnode* makeNode(char *var,struct tnode *left, struct tnode *right)

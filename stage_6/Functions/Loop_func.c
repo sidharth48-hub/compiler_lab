@@ -3,7 +3,7 @@ void TypeCheckCond(struct tnode *root)
     struct tnode *left = root->left;//variable 1
     struct tnode *right = root->right;//variable 2
     
-    int left_type,right_type;
+    struct Typetable *left_type,*right_type;
 
     struct Gsymbol *temp1,*temp2;
 
@@ -55,6 +55,8 @@ void TypeCheckCond(struct tnode *root)
         case NODE_VAR_FUNC_CALL:temp2 = Lookup(right->varname);
                                right_type = temp2->type;
                                break;
+        case NODE_VAR_NULL: right_type = left_type;
+                            break;                       
         default: right_type = root->type;
                              break;                                                                                                   
     }
@@ -86,7 +88,7 @@ void checkForInfiniteLoop(struct tnode *root)
 
 int ValidateCond(struct tnode *root,int nodetype,int label_no,FILE *fptr)
 {
-    if(root->type!=booltype)
+    if(strcmp(root->type->name,"boolean")!=0)
     {
         printf("Error!!! Not a bool type in If condition block\n");
         exit(1);
@@ -115,7 +117,7 @@ int ValidateCond(struct tnode *root,int nodetype,int label_no,FILE *fptr)
 int ifCondBlock(struct tnode* root,FILE *fptr)
 {
 
-    TypeCheckCond(root);
+    //TypeCheckCond(root);
 
     int lno = ValidateCond(root,NODE_IF,0,fptr);
 
@@ -156,7 +158,7 @@ void ifBlock(struct tnode *root,FILE *fptr)
 int whileCondBlock(struct tnode *root,FILE *fptr)
 {
     checkForInfiniteLoop(root);
-    TypeCheckCond(root);
+    //TypeCheckCond(root);
     int lno = ValidateCond(root,NODE_WHILE,0,fptr);
     return lno;
 }
@@ -180,7 +182,7 @@ void whileBlock(struct tnode *root,FILE *fptr)
 void doWhileCondBlock(struct tnode *root, int lno,FILE *fptr)
 {
     checkForInfiniteLoop(root);
-    TypeCheckCond(root);
+    //TypeCheckCond(root);
     
     ValidateCond(root,NODE_DO,lno,fptr);
 }
@@ -206,7 +208,7 @@ void doWhileBlock(struct tnode *root,FILE *fptr)
 void repuntilCondBlock(struct tnode *root, int lno,FILE *fptr)
 {
     checkForInfiniteLoop(root);
-    TypeCheckCond(root);
+    //TypeCheckCond(root);
 
     ValidateCond(root,NODE_REPEAT,lno,fptr);
 }

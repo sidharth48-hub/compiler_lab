@@ -45,7 +45,19 @@
 #define NODE_NOT 43
 #define NODE_BREAK_POINT 44
 
-//////TYPE OF THE VARIABLE//////////////
-#define booltype 0
-#define intType 1
-#define stringType 2
+
+#define NODE_TYPEDEF 48
+#define NODE_USERID 49
+#define NODE_TYPE_FIELD 47
+#define NODE_TYPENAME 45
+#define NODE_TYPEID 46
+
+#define NODE_LTYPE 47
+#define NODE_FIELD 48
+#define NODE_FIELD_VAR 49
+#define NODE_DYNAMIC 50
+#define NODE_VAR_NULL 51
+#define NODE_FREE 52
+#define NODE_INITIALIZE 53
+#define NODE_ALLOC 54
+

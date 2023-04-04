@@ -31,7 +31,7 @@ struct Paramstruct *ParamLookup(char *name)
     return NULL;
 }
 
-void createParamNode(char *name,int type)
+void createParamNode(char *name,struct Typetable *type)
 {
     struct Paramstruct* node;
     node = (struct Paramstruct*)malloc(sizeof(struct Paramstruct));
@@ -58,14 +58,16 @@ void createParamList(struct tnode *root)
 {
     if(root->nodetype==NODE_PARAM)
     {
-        if(root->left->varname!=NULL)
+        struct Typetable *type = TLookup(root->left->varname);
+
+        if(root->right->varname!=NULL)
         {
-            if(ParamLookup(root->left->varname)!=NULL)
+            if(ParamLookup(root->right->varname)!=NULL)
             {
                 printf("Error!!! parameters with same name in function declaration\n");
                 exit(1);
             }
-            createParamNode(root->left->varname,root->type);
+            createParamNode(root->right->varname,type);
         }        
     }
     if(root->left!=NULL)
@@ -75,7 +77,7 @@ void createParamList(struct tnode *root)
        createParamList(root->right);
 }
 
-void Install(char *name, int type, int size,int nodetype,struct Paramstruct *paramlist)
+void Install(char *name, struct Typetable *type, int size,int nodetype,struct Paramstruct *paramlist)
 {
     struct Gsymbol* node;
     node = (struct Gsymbol*)malloc(sizeof(struct Gsymbol));
@@ -122,7 +124,7 @@ void Install(char *name, int type, int size,int nodetype,struct Paramstruct *par
     node->next = NULL;
 }
 
-void GsymbolEntry(int type, struct tnode *root)
+void GsymbolEntry(struct Typetable *type,struct tnode *root)
 {
     if(root->varname!=NULL && Lookup(root->varname)!=NULL)
     {
@@ -170,13 +172,13 @@ void printGsymbolTable()
     struct Gsymbol* temp = shead;
     while(temp!=NULL)
     {
-        printf("%s %d %d\n",temp->name,temp->type,temp->binding);
+        printf("%s %s %d\n",temp->name,temp->type->name,temp->binding);
         struct Paramstruct *t = temp->paramlist;
         if(t!=NULL)
         {
             while(t!=NULL)
             {
-                printf("%s %d\n",t->name,t->type);
+                printf("%s %s\n",t->name,t->type->name);
                 t=t->next;
             }
         }
@@ -204,18 +206,9 @@ struct tnode* createDeclTree(char *c,int size,int nodetype,struct tnode *left,st
     return temp;
 }
 
-struct tnode* makeDataTypeNode(int type,struct tnode *left)
+struct tnode* makeDataTypeNode(int nodetype,struct tnode *left,struct tnode *right)
 {
-    int nodetype;
-    if(type==intType)
-    {
-        nodetype = NODE_INT;
-    }
-    else if(type==stringType)
-    {
-        nodetype = NODE_STRING;
-    }
-    return createDeclTree(NULL,0,nodetype,left,NULL);
+    return createDeclTree(NULL,0,nodetype,left,right);
 }
 
 struct tnode* makeIdNodeDecl(int nodetype,char *str,int size,struct tnode *left)
@@ -228,16 +221,15 @@ struct tnode* makeDeclNode(int nodetype,struct tnode *l, struct tnode *r)
     return createDeclTree(".",0,nodetype,l,r);
 }
 
-struct tnode* makeParamNode(int nodetype,int type, struct tnode *left)
+struct tnode* makeParamNode(int nodetype,struct tnode *left,struct tnode *right)
 {
     struct tnode *temp;
     temp = (struct tnode*)malloc(sizeof(struct tnode));
     temp->varname = NULL;
-    temp->type=type;
     temp->nodetype = nodetype;
     temp->size = 0;
     temp->left = left;
-    temp->right = NULL;
+    temp->right = right;
     return temp;
 }
 

@@ -14,13 +14,19 @@ numbers [0-9]+
 
 %%
 
+type            {return TYPE;}
+endtype         {return ENDTYPE;}
+alloc           {return ALLOC;}
+initialize      {return INITIALIZE;}
+free            {return FREE;}
+null            {return VAR_NULL;}
 begin           {return START;}
 end             {return END;}
 decl            {return DECL;}
 enddecl         {return ENDDECL;}
 return          {return RETURN;}
-int             {yylval.num = intType;return INT;}
-string          {yylval.num = stringType;return STR;}
+int             {return INT;}
+string          {return STR;}
 read            {return READ;}
 write           {return WRITE;}
 if              {return IF;}
@@ -54,10 +60,10 @@ breakpoint      {return BREAKPOINT;}
 "&&"            {return AND;}
 "||"            {return OR;}
 "!"             {return NOT;}
+"."             {return POINT;}
 [ \t]           {}
 [\n]            {yylineno++;}
 [,()\[\]{}]	    {return *yytext;}
-.		        {}
 %%
 
 int yywrap(void)

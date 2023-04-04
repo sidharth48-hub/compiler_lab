@@ -12,7 +12,7 @@ int getLocalBindDecl()
     return LocalBind++;
 }
 
-void LInstall(char *name, int type,int nodetype)
+void LInstall(char *name, struct Typetable *type,int nodetype)
 {
     struct Lsymbol* node;
     node = (struct Lsymbol*)malloc(sizeof(struct Lsymbol));
@@ -50,12 +50,13 @@ void LsymbolEntryParam(struct tnode *root)
 {
     if(root->nodetype == NODE_PARAM)
     {
-        if(root->left->varname!=NULL && LLookup(root->left->varname,Lhead)!=NULL)
+        struct Typetable *type = TLookup(root->left->varname);
+        if(root->right->varname!=NULL && LLookup(root->right->varname,Lhead)!=NULL)
         {
             printf("Error!!! Local variables with same name\n");
             exit(1);
         }
-        LInstall(root->left->varname,root->type,root->nodetype);
+        LInstall(root->right->varname,type,root->nodetype);
     }
 
     if(root->left!=NULL)
@@ -64,7 +65,7 @@ void LsymbolEntryParam(struct tnode *root)
         LsymbolEntryParam(root->right);    
 }
 
-void LsymbolEntryDeclVar(int type,struct tnode *root)
+void LsymbolEntryDeclVar(struct Typetable *type,struct tnode *root)
 {
     if(root->nodetype == NODE_VARIABLE)
     {
@@ -84,13 +85,11 @@ void LsymbolEntryDeclVar(int type,struct tnode *root)
 
 void LsymbolEntryDecl(struct tnode *root)
 {
-    switch (root->nodetype)
+    if(root->nodetype==NODE_LTYPE)
     {
-    case NODE_INT:LsymbolEntryDeclVar(intType,root->left);
-                  break;
-    case NODE_STRING:LsymbolEntryDeclVar(stringType,root->left);
-                  break;              
-    default:break;
+        struct Typetable *type = TLookup(root->left->varname);
+        LsymbolEntryDeclVar(type,root->right);
+        return;
     }
 
     if(root->left!=NULL)
@@ -135,10 +134,26 @@ void LinkLocalTable(struct Lsymbol *Lhead,struct tnode *root)
 {
     // if(root->varname!=NULL)
     //     printf("%s\n",root->varname);
+    if(root->nodetype==NODE_FIELD)
+    {
+        struct tnode *node = root;
+        
+        while(node->left!=NULL)
+        {
+            node = node->left;
+        }
+        
+        char *name = node->varname;
+
+        struct Lsymbol *temp = LLookup(name,Lhead);
+        node->lentry = temp;
+        return;
+    }
     if(root->nodetype==NODE_VARIABLE)
     {
         struct Lsymbol *temp = LLookup(root->varname,Lhead);
         root->lentry = temp;
+        return;
     }
 
     if(root->left!=NULL)
@@ -152,7 +167,7 @@ void printLsymbolTable(struct Lsymbol *root)
     struct Lsymbol* temp = root;
     while(temp!=NULL)
     {
-        printf("%s %d %d\n",temp->name,temp->type,temp->binding);
+        printf("%s %s %d\n",temp->name,temp->type->name,temp->binding);
         temp=temp->next;
     }
 }
@@ -197,18 +212,9 @@ struct tnode* makeLDeclConnectorNode(int nodetype,struct tnode *l,struct tnode *
     return createLDeclTree(".",nodetype,l,r);
 }
 
-struct tnode* makeLDeclTypeNode(int type,struct tnode *l)
+struct tnode* makeLDeclTypeNode(int nodetype,struct tnode *l,struct tnode *r)
 {
-    int nodetype;
-    if(type==intType)
-    {
-        nodetype = NODE_INT;
-    }
-    else if(type==stringType)
-    {
-        nodetype = NODE_STRING;
-    }
-    return createFuncTree(NULL,nodetype,l,NULL);
+    return createFuncTree(NULL,nodetype,l,r);
 }
 
 struct tnode* makeLDeclIdNode(int nodetype,char *str)

@@ -183,8 +183,6 @@ struct tnode* makeConnectorNode(int nodetype,char *c, struct tnode *l, struct tn
 
 struct tnode* makeOperatorNode(int nodetype,char *c, struct tnode *l, struct tnode *r);
 
-struct tnode* makeMainTypeNode(int type);
-
 ////IF_BLOCK////////
 
 struct tnode* makeNode(char *var,struct tnode *left, struct tnode *right);

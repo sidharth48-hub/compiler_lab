@@ -1,6 +1,9 @@
 int num_of_params;
 int num_of_given_params;
 
+struct Paramstruct *paramlist;
+
+
 
 void push_used_reg(FILE *fptr)
 {
@@ -24,7 +27,8 @@ void push_arglist(struct tnode *root,FILE *fptr)
     switch(root->nodetype)
     {
         case NODE_VARIABLE: 
-        case NODE_VAR_ARRAY:reg_no = codegen(root,fptr); //reg_no of variable;
+        case NODE_VAR_ARRAY:
+        case NODE_FIELD: reg_no = codegen(root,fptr); //reg_no of variable;
                             fprintf(fptr,"MOV R%d,[R%d]\n",reg_no,reg_no);
                             fprintf(fptr,"PUSH R%d\n",reg_no);
                             return;
@@ -68,28 +72,28 @@ void pop_arglist(struct tnode *root,FILE *fptr)
         pop_arglist(root->left,fptr); 
 }
 
-void CheckFuncVar(struct Paramstruct *list,struct tnode *root)
+void CheckFuncVar(struct tnode *root)
 {
-    int type;
+    struct Typetable *type;
     struct Gsymbol *temp1,*temp2;
 
     switch(root->nodetype)
     {
         case NODE_STRINGS:type = stringType;
-                          if(type!=list->type)
+                          if(type!=paramlist->type)
                           {
                             printf("Error!!! Type of paramters do not match the declaration\n");
                             exit(1);
                           } 
-                          list=list->next;
+                          paramlist=paramlist->next;
                           break;
         case NODE_CONSTANT:type = intType;
-                           if(type!=list->type)
+                           if(type!=paramlist->type)
                            {
                             printf("Error!!! Type of paramters do not match the declaration\n");
                             exit(1);
                            }
-                           list=list->next;
+                           paramlist=paramlist->next;
                            break;
         case NODE_VARIABLE:if(root->lentry!=NULL)
                            {
@@ -105,12 +109,13 @@ void CheckFuncVar(struct Paramstruct *list,struct tnode *root)
                               }
                               type = temp->type;
                            }
-                           if(type!=list->type)
+                           if(type!=paramlist->type)
                           {
+                            printf("%s %s, list_type:%s\n",type->name,root->varname,paramlist->type->name);
                             printf("Error!!! Type of paramters do not match the declaration\n");
                             exit(1);
                           }
-                           list=list->next;
+                           paramlist=paramlist->next;
                            break;
         case NODE_VAR_ARRAY:temp1 = Lookup(root->varname);
                             if(temp1==NULL)
@@ -120,39 +125,61 @@ void CheckFuncVar(struct Paramstruct *list,struct tnode *root)
                             }
                             type = temp1->type;
 
-                            if(type!=list->type)
+                            if(type!=paramlist->type)
                             {
                                 printf("Error!!! Type of paramters do not match the declaration\n");
                                 exit(1);
                             }
-                            list=list->next;
+                            paramlist=paramlist->next;
                             break;
         case NODE_VAR_FUNC_CALL:temp2 = Lookup(root->varname);
                                type = temp2->type;
-                               if(type!=list->type)
+                               if(type!=paramlist->type)
                                {
                                     printf("Error!!! Type of paramters do not match the declaration\n");
                                     exit(1);
                                }
-                               list=list->next;
+                               paramlist=paramlist->next;
                                break;
+        case NODE_FIELD: findTypeField(root);
+                         type = Field_head;
+                         if(type!=paramlist->type)
+                         {
+                                printf("Error!!! Type of paramters do not match the declaration\n");
+                                exit(1);
+                         }
+                         paramlist=paramlist->next;
+                         break;
+        case NODE_VAR_NULL: if(paramlist->type == intType || paramlist->type==stringType)
+                            {
+                                printf("Error!! NULL passed to non user defined types\n");
+                                exit(1);
+                            }
+                            paramlist = paramlist->next;
+                            break;
+        case NODE_ALLOC: printf("ALLOC cannot be passed as a function parameter\n");
+                         exit(1);
+        case NODE_FREE: printf("FREE cannot be passed as a function parameter\n");
+                        exit(1);
+        case NODE_INITIALIZE: printf("INITIALIZE cannot be passed as a function parameter\n");
+                              exit(1);                                                         
         default: if(root->nodetype!=NODE_ARGLIST)
                  {
                     type = root->type;
-                    if(type!=list->type)
+                    if(type!=paramlist->type)
                     {
                         printf("Error!!! Type of paramters do not match the declaration\n");
                         exit(1);
                     }
-                    list=list->next;
+                    paramlist=paramlist->next;
                  }    
                 break;
     }
 
     if(root->left!=NULL && root->nodetype==NODE_ARGLIST)
-        CheckFuncVar(list,root->left);
+        CheckFuncVar(root->left);
     if(root->right!=NULL && root->nodetype==NODE_ARGLIST)   
-        CheckFuncVar(list,root->right);           
+        CheckFuncVar(root->right);           
 }
 
 void numParams(struct Paramstruct *list)
@@ -196,7 +223,7 @@ void TypeCheckFunc_call(struct tnode *root)
         exit(1);
     }
     
-    struct Paramstruct *paramlist = temp->paramlist;
+    paramlist = temp->paramlist;
     struct tnode *arglist = root->left;
     
     if(paramlist!=NULL && arglist==NULL)
@@ -226,7 +253,7 @@ void TypeCheckFunc_call(struct tnode *root)
             exit(1);
         }
 
-        CheckFuncVar(paramlist,arglist);
+        CheckFuncVar(arglist);
     }
 }
 

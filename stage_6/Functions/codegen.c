@@ -13,7 +13,7 @@ int getLabel()
 
 void freeReg()
 {
-    if(reg>=0)
+    if(reg>=1)
         reg--;
 }
 
@@ -37,6 +37,8 @@ int codegen(struct tnode *root,FILE *fptr)
 
         case NODE_STRINGS: return setupvariable(root,fptr);
 
+        case NODE_FIELD_VAR: return setupvariable(root,fptr);
+
         case NODE_VAR_FUNC_CALL: return function_call(root,fptr);                                              
 
         case NODE_IF: ifBlock(root,fptr);
@@ -57,7 +59,14 @@ int codegen(struct tnode *root,FILE *fptr)
         case NODE_CONTINUE: callcontinue(fptr);
                             return -1;
         case NODE_BREAK_POINT: fprintf(fptr,"BRKP\n");
-                               return -1;                                                                                                                        
+                               return -1;
+        case NODE_ALLOC: 
+        case NODE_INITIALIZE:
+        case NODE_FREE: return calldynamic(fptr,root);
+
+        case NODE_VAR_NULL: return callnull(fptr);
+
+        case NODE_FIELD: return callfield(fptr,root);                                                                                                                                                                          
     }
 
 

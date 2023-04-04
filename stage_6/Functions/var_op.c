@@ -65,6 +65,8 @@ int setupvariable(struct tnode *root,FILE *fptr)
 
         case NODE_VAR_ARRAY: varcode(root,new_reg,fptr);
                              break;
+        case NODE_FIELD_VAR: setupFieldVar(fptr,root,new_reg);
+                             break;                                           
     }
 
     return new_reg;
@@ -75,7 +77,7 @@ void TypeCheckOperator(struct tnode *root)
     struct tnode *left = root->left;//variable 1
     struct tnode *right = root->right;//variable 2
     
-    int left_type,right_type;
+    struct Typetable *left_type,*right_type;
     
     struct Gsymbol *temp1,*temp2;
     switch(left->nodetype)
@@ -100,6 +102,17 @@ void TypeCheckOperator(struct tnode *root)
         case NODE_VAR_FUNC_CALL:temp2 = Lookup(left->varname);
                                left_type = temp2->type;
                                break;
+        case NODE_FIELD: findTypeField(root);
+                         left_type = Field_head;
+                         break;
+        case NODE_VAR_NULL: printf("Error!! NULL not allowed on the left side of the conditions\n");
+                            exit(1);
+        case NODE_ALLOC: printf("Error!!! alloc not available as a conditional operator\n");
+                         exit(1);
+        case NODE_FREE: printf("Error!!! Free not available as a conditional operator\n");
+                        exit(1);
+        case NODE_INITIALIZE: printf("Error!!! Initialize not available as a conditional operator\n");
+                              exit(1);                                      
         default: left_type = root->type;
                              break;                                                                                                   
     }
@@ -126,11 +139,29 @@ void TypeCheckOperator(struct tnode *root)
         case NODE_VAR_FUNC_CALL:temp2 = Lookup(right->varname);
                                right_type = temp2->type;
                                break;
+        case NODE_FIELD: findTypeField(root);
+                         right_type = Field_head;
+                         break;
+        case NODE_VAR_NULL: if(root->nodetype!=NODE_EQ && root->nodetype!=NODE_NE)
+                            {
+                                printf("%s %s %s\n",left->varname,root->varname,right->varname);
+                                printf("Error!!! NULL not allowed on the condition\n");
+                                exit(1);
+                            }
+                            right_type = left_type;
+                            break;
+
+        case NODE_ALLOC: printf("Error!!! alloc not available as a conditional operator\n");
+                         exit(1);
+        case NODE_FREE: printf("Error!!! Free not available as a conditional operator\n");
+                        exit(1);
+        case NODE_INITIALIZE: printf("Error!!! Initialize not available as a conditional operator\n");
+                              exit(1);                                        
         default: right_type = root->type;
                              break;                                                                                                   
     }
 
-    if(root->nodetype==NODE_EQ)
+    if(root->nodetype==NODE_EQ || root->nodetype==NODE_NE)
     {
         if(left_type!=right_type)
         {
@@ -140,7 +171,7 @@ void TypeCheckOperator(struct tnode *root)
     }
     else if(root->nodetype==NODE_AND || root->nodetype==NODE_OR)
     {
-        if(left_type!=booltype || right_type!=booltype)
+        if(left_type!=boolType || right_type!=boolType)
         {
            printf("Error!!! type of operands is different at operator %s\n",root->varname);
            exit(1); 
@@ -187,7 +218,7 @@ void callop_or(int l,int r,FILE *fptr)
 int call_not(struct tnode *root,int r,FILE *fptr)
 {
 
-    if(root->right->type!=booltype)
+    if(root->right->type!=boolType)
     {
         printf("Error!!!! Not a boolean value for operator in NOT\n");
         exit(1);
@@ -216,13 +247,20 @@ int setupoperator(struct tnode *root,int l,int r,FILE *fptr)
     
     TypeCheckOperator(root);
 
-    if(root->left->nodetype==NODE_VARIABLE || root->left->nodetype == NODE_VAR_ARRAY)
+    switch(root->left->nodetype)
     {
-        fprintf(fptr,"MOV R%d, [R%d]\n",l,l);
+        case NODE_VARIABLE:
+        case NODE_VAR_ARRAY:
+        case NODE_FIELD: fprintf(fptr,"MOV R%d, [R%d]\n",l,l);
+                          break;
     }
-    if(root->right->nodetype==NODE_VARIABLE || root->right->nodetype == NODE_VAR_ARRAY)
+
+    switch(root->right->nodetype)
     {
-        fprintf(fptr,"MOV R%d, [R%d]\n",r,r);
+        case NODE_VARIABLE:
+        case NODE_VAR_ARRAY:
+        case NODE_FIELD: fprintf(fptr,"MOV R%d, [R%d]\n",r,r);
+                          break;
     }
 
     switch(root->nodetype)

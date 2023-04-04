@@ -49,101 +49,115 @@ extern int yydebug;
 # define YYTOKENTYPE
   enum yytokentype
   {
-    START = 258,
-    END = 259,
-    DECL = 260,
-    ENDDECL = 261,
-    INT = 262,
-    STR = 263,
-    SEMICOLON = 264,
-    RETURN = 265,
-    BREAKPOINT = 266,
-    READ = 267,
-    WRITE = 268,
-    IF = 269,
-    THEN = 270,
-    ELSE = 271,
-    ENDIF = 272,
-    WHILE = 273,
-    DO = 274,
-    ENDWHILE = 275,
-    REPEAT = 276,
-    UNTIL = 277,
-    BREAK = 278,
-    CONTINUE = 279,
-    NUM = 280,
-    ID = 281,
-    STRING = 282,
-    OR = 283,
-    AND = 284,
-    GTE = 285,
-    LTE = 286,
-    LT = 287,
-    GT = 288,
-    NE = 289,
-    EQ = 290,
-    PLUS = 291,
-    MINUS = 292,
-    MUL = 293,
-    DIV = 294,
-    MOD = 295,
-    NOT = 296,
-    EQUAL = 297
+    TYPE = 258,
+    ENDTYPE = 259,
+    ALLOC = 260,
+    INITIALIZE = 261,
+    FREE = 262,
+    VAR_NULL = 263,
+    START = 264,
+    END = 265,
+    DECL = 266,
+    ENDDECL = 267,
+    INT = 268,
+    STR = 269,
+    SEMICOLON = 270,
+    RETURN = 271,
+    BREAKPOINT = 272,
+    POINT = 273,
+    READ = 274,
+    WRITE = 275,
+    IF = 276,
+    THEN = 277,
+    ELSE = 278,
+    ENDIF = 279,
+    WHILE = 280,
+    DO = 281,
+    ENDWHILE = 282,
+    REPEAT = 283,
+    UNTIL = 284,
+    BREAK = 285,
+    CONTINUE = 286,
+    NUM = 287,
+    ID = 288,
+    STRING = 289,
+    OR = 290,
+    AND = 291,
+    GTE = 292,
+    LTE = 293,
+    LT = 294,
+    GT = 295,
+    NE = 296,
+    EQ = 297,
+    PLUS = 298,
+    MINUS = 299,
+    MUL = 300,
+    DIV = 301,
+    MOD = 302,
+    NOT = 303,
+    EQUAL = 304
   };
 #endif
 /* Tokens.  */
-#define START 258
-#define END 259
-#define DECL 260
-#define ENDDECL 261
-#define INT 262
-#define STR 263
-#define SEMICOLON 264
-#define RETURN 265
-#define BREAKPOINT 266
-#define READ 267
-#define WRITE 268
-#define IF 269
-#define THEN 270
-#define ELSE 271
-#define ENDIF 272
-#define WHILE 273
-#define DO 274
-#define ENDWHILE 275
-#define REPEAT 276
-#define UNTIL 277
-#define BREAK 278
-#define CONTINUE 279
-#define NUM 280
-#define ID 281
-#define STRING 282
-#define OR 283
-#define AND 284
-#define GTE 285
-#define LTE 286
-#define LT 287
-#define GT 288
-#define NE 289
-#define EQ 290
-#define PLUS 291
-#define MINUS 292
-#define MUL 293
-#define DIV 294
-#define MOD 295
-#define NOT 296
-#define EQUAL 297
+#define TYPE 258
+#define ENDTYPE 259
+#define ALLOC 260
+#define INITIALIZE 261
+#define FREE 262
+#define VAR_NULL 263
+#define START 264
+#define END 265
+#define DECL 266
+#define ENDDECL 267
+#define INT 268
+#define STR 269
+#define SEMICOLON 270
+#define RETURN 271
+#define BREAKPOINT 272
+#define POINT 273
+#define READ 274
+#define WRITE 275
+#define IF 276
+#define THEN 277
+#define ELSE 278
+#define ENDIF 279
+#define WHILE 280
+#define DO 281
+#define ENDWHILE 282
+#define REPEAT 283
+#define UNTIL 284
+#define BREAK 285
+#define CONTINUE 286
+#define NUM 287
+#define ID 288
+#define STRING 289
+#define OR 290
+#define AND 291
+#define GTE 292
+#define LTE 293
+#define LT 294
+#define GT 295
+#define NE 296
+#define EQ 297
+#define PLUS 298
+#define MINUS 299
+#define MUL 300
+#define DIV 301
+#define MOD 302
+#define NOT 303
+#define EQUAL 304
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 27 "exptree.y"
+#line 29 "exptree.y"
 
     struct tnode *no;
     char* ch;
     int num;
 
-#line 147 "y.tab.h"
+#line 161 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

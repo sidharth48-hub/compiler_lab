@@ -12,12 +12,14 @@
     #include "./Functions/exptree.c"
     #include "./Functions/break_cont.c"
     #include "./Functions/codegen.c"
+    #include "./Functions/dynamic_alloc.c"
     #include "./Functions/Func_call.c"
     #include "./Functions/function.c"
     #include "./Functions/Gsymbol.c"
     #include "./Functions/Loop_func.c"
     #include "./Functions/Lsymbol.c"
     #include "./Functions/read_write_assg.c"
+    #include "./Functions/TypeDef.c"
     #include "./Functions/var_op.c"
      
     int yylex(void);
@@ -30,12 +32,13 @@
     int num;
 };
 
+%type <no> TypeDefBlock TypeDefList TypeDef FieldDecList FieldDecL TypeName
 %type <no> GDeclBlock DeclList Decl VarList IdDecl ParamList Param
 %type <no> FdefBlock Fdef Body returnstmt
 %type <no> LdeclBlock LDecList LDecl IdList
-%type <no> program Slist InputStmt OutputStmt AssgStmt expr stmt Ifstmt Whilestmt breakstmt continuestmt dowhilestmt repuntilstmt Identifier MainBlock ArgList
-%type <num> Type
-%token START END DECL ENDDECL INT STR SEMICOLON RETURN BREAKPOINT
+%type <no> program Slist InputStmt OutputStmt AssgStmt expr stmt Ifstmt Whilestmt breakstmt continuestmt breakpointstmt dowhilestmt repuntilstmt Identifier MainBlock Field ArgList
+%token TYPE ENDTYPE ALLOC INITIALIZE FREE VAR_NULL
+%token START END DECL ENDDECL INT STR SEMICOLON RETURN BREAKPOINT POINT
 %token READ WRITE 
 %token IF THEN ELSE ENDIF
 %token WHILE DO ENDWHILE REPEAT UNTIL BREAK CONTINUE
@@ -52,10 +55,46 @@
 
 %%
 
-program : GDeclBlock FdefBlock MainBlock {codegenerator($<no>2,$<no>3);}
+program : TypeDefBlock GDeclBlock FdefBlock MainBlock {codegenerator($<no>3,$<no>4);}
+        | TypeDefBlock GDeclBlock MainBlock {codegenerator(NULL,$<no>3);}
+        | TypeDefBlock FdefBlock MainBlock {codegenerator($<no>2,$<no>3);}
+        | TypeDefBlock MainBlock  {codegenerator(NULL,$<no>2);}
+        | GDeclBlock FdefBlock MainBlock {codegenerator($<no>2,$<no>3);}
         | GDeclBlock MainBlock {codegenerator(NULL,$<no>2);}
-        | MainBlock  {codegenerator(NULL,$<no>1);}
+        | FdefBlock MainBlock {codegenerator($<no>1,$<no>2);}
+        | MainBlock {codegenerator(NULL,$<no>1);}
         ;
+
+/*----------------TYPE DEFINITION BLOCK--------------------------------*/
+
+TypeDefBlock : TYPE TypeDefList ENDTYPE {$$=$<no>2;
+                                         TypetableCreate();
+                                         TypetableEntry($<no>2);
+                                        }
+             | TYPE ENDTYPE {}
+             ;
+
+TypeDefList : TypeDefList TypeDef {$$=makeTypeConnector(NODE_CONNECTOR,$<no>1,$<no>2);}
+            | TypeDef {$$=$<no>1;}
+            ;
+
+TypeDef : ID '{' FieldDecList '}' {$$=makeTypeConnector(NODE_TYPEDEF,makeIdNode(NODE_USERID,$<ch>1,NULL,NULL),$<no>3);}
+        ;
+
+FieldDecList : FieldDecList FieldDecL {$$=makeTypeConnector(NODE_CONNECTOR,$<no>1,$<no>2);}
+             | FieldDecL {$$=$<no>1;}
+             ;
+
+FieldDecL : TypeName ID SEMICOLON {$$=makeTypeConnector(NODE_TYPE_FIELD,$<no>1,makeIdNode(NODE_TYPEID,$<ch>2,NULL,NULL));}
+          ;
+
+TypeName : INT {$$=makeTypeNameNode("int",NODE_TYPENAME);}
+         | STR {$$=makeTypeNameNode("string",NODE_TYPENAME);}
+         | ID {$$=makeTypeNameNode($<ch>1,NODE_TYPENAME);}
+         ;
+
+
+/*----------------------------------------------------------------------*/
 
 /*-----------------GLOBAL DECL BLOCK-----------------------------------*/
 
@@ -67,13 +106,10 @@ DeclList : DeclList Decl {$$=makeDeclNode(NODE_CONNECTOR,$<no>1,$<no>2);}
          | Decl {$$=$<no>1;}
          ;
 
-Decl : Type VarList SEMICOLON {$$=makeDataTypeNode($<num>1,$<no>2);
-                               GsymbolEntry($<num>1,$<no>2);
+Decl : TypeName VarList SEMICOLON {$$=makeDataTypeNode(NODE_CONNECTOR,$<no>1,$<no>2);
+                               struct Typetable *type = TLookup($<no>1->varname);
+                               GsymbolEntry(type,$<no>2);
                                }
-     ;
-
-Type : INT {$$=$<num>1;}
-     | STR {$$=$<num>1;}
      ;
 
 VarList : VarList ',' IdDecl {$$=makeDeclNode(NODE_CONNECTOR,$<no>1,$<no>3);}
@@ -91,7 +127,7 @@ ParamList : ParamList ',' Param {$$=makeDeclNode(NODE_CONNECTOR,$<no>1,$<no>3);}
           | Param  {$$=$<no>1;}
           ;
 
-Param : Type ID {$$=makeParamNode(NODE_PARAM,$<num>1,makeIdNodeDecl(NODE_PARAM_VARIABLE,$<ch>2,0,NULL));}
+Param : TypeName ID {$$=makeParamNode(NODE_PARAM,$<no>1,makeIdNodeDecl(NODE_PARAM_VARIABLE,$<ch>2,0,NULL));}
       ;              
 
 /*---------------------------------------------------------------------------*/
@@ -102,8 +138,8 @@ FdefBlock : FdefBlock Fdef {$$=makeFuncConnectorNode(NODE_CONNECTOR,$<no>1,$<no>
           | Fdef {$$=$<no>1;}
           ;
 
-Fdef : Type ID '('ParamList')''{' LdeclBlock Body '}' {
-                                                          struct tnode *temp1 = makeFuncTypeNode($<num>1);
+Fdef : TypeName ID '('ParamList')''{' LdeclBlock Body '}' {
+                                                          struct tnode *temp1 = $<no>1;
                                                           struct tnode *temp2 = makeFuncConnectorNode(NODE_CONNECTOR,$<no>7,$<no>8);
                                                           struct tnode *temp3 = makeFuncConnectorNode(NODE_CONNECTOR,$<no>4,temp2); 
                                                           struct tnode *temp4 = makeFuncIdNode(NODE_FUNCTION,$<ch>2,temp1,temp3);
@@ -114,8 +150,8 @@ Fdef : Type ID '('ParamList')''{' LdeclBlock Body '}' {
 
                                                           LinkLocalTable(temp,$<no>8);    
                                                        }
-     | Type ID '('ParamList')' '{' Body '}' {
-                                                          struct tnode *temp1 = makeFuncTypeNode($<num>1);
+     | TypeName ID '('ParamList')' '{' Body '}' {
+                                                          struct tnode *temp1 = $<no>1;
                                                           struct tnode *temp2 = makeFuncConnectorNode(NODE_CONNECTOR,NULL,$<no>7);
                                                           struct tnode *temp3 = makeFuncConnectorNode(NODE_CONNECTOR,$<no>4,temp2);
 
@@ -126,8 +162,8 @@ Fdef : Type ID '('ParamList')''{' LdeclBlock Body '}' {
                                                           struct Lsymbol *temp =  LsymbolEntry($<no>4,NULL);
                                                           LinkLocalTable(temp,$<no>7);
                                             }
-     | Type ID '('')' '{' LdeclBlock Body '}' {
-                                                          struct tnode *temp1 = makeFuncTypeNode($<num>1);
+     | TypeName ID '('')' '{' LdeclBlock Body '}' {
+                                                          struct tnode *temp1 = $<no>1;
                                                           struct tnode *temp2 = makeFuncConnectorNode(NODE_CONNECTOR,$<no>6,$<no>7);
                                                           struct tnode *temp3 = makeFuncConnectorNode(NODE_CONNECTOR,NULL,temp2);
                                                           struct tnode *temp4 = makeFuncIdNode(NODE_FUNCTION,$<ch>2,temp1,temp3);
@@ -135,10 +171,11 @@ Fdef : Type ID '('ParamList')''{' LdeclBlock Body '}' {
                                                           $$ = temp4;
 
                                                           struct Lsymbol *temp =  LsymbolEntry(NULL,$<no>6);
+                                                          
                                                           LinkLocalTable(temp,$<no>7);
                                                }
-     | Type ID '('')' '{' Body '}' {
-                                                          struct tnode *temp1 = makeFuncTypeNode($<num>1);
+     | TypeName ID '('')' '{' Body '}' {
+                                                          struct tnode *temp1 = $<no>1;
                                                           struct tnode *temp2 = makeFuncConnectorNode(NODE_CONNECTOR,NULL,$<no>6);
                                                           struct tnode *temp3 = makeFuncConnectorNode(NODE_CONNECTOR,NULL,temp2);
 
@@ -167,8 +204,8 @@ LDecList : LDecList LDecl {$$=makeLDeclConnectorNode(NODE_LCONNECTOR,$<no>1,$<no
          | LDecl {$$=$<no>1;}
          ;
 
-LDecl : Type IdList SEMICOLON {
-                               $$=makeLDeclTypeNode($<num>1,$<no>2);
+LDecl : TypeName IdList SEMICOLON {
+                               $$=makeLDeclTypeNode(NODE_LTYPE,$<no>1,$<no>2);
                                }
       ;
 
@@ -196,6 +233,7 @@ stmt : InputStmt {$$=$<no>1;}
      | Whilestmt {$$=$<no>1;}
      | breakstmt {$$=$<no>1;}
      | continuestmt {$$=$<no>1;}
+     | breakpointstmt {$$=$<no>1;}
      | dowhilestmt {$$=$<no>1;}
      | repuntilstmt {$$=$<no>1;}
      ;
@@ -229,26 +267,39 @@ breakstmt : BREAK SEMICOLON {$$=makebreakNode(NODE_BREAK);}
 continuestmt : CONTINUE SEMICOLON {$$=makecontNode(NODE_CONTINUE);}
              ;
 
+breakpointstmt :  BREAKPOINT SEMICOLON {$$=makeIdNode(NODE_BREAK_POINT,$<ch>1,NULL,NULL);}
+               ;
+
 expr : expr PLUS expr {$$ = makeOperatorNode(NODE_ADD,"+",$<no>1,$<no>3);$$->type = intType;}
     | expr MINUS expr {$$ = makeOperatorNode(NODE_SUB,"-",$<no>1,$<no>3);$$->type = intType;}
     | expr MUL expr {$$ = makeOperatorNode(NODE_MUL,"*",$<no>1,$<no>3); $$->type = intType;}
     | expr DIV expr {$$ = makeOperatorNode(NODE_DIV,"/",$<no>1,$<no>3);$$->type = intType;}
     | expr MOD expr {$$ = makeOperatorNode(NODE_MOD,"%",$<no>1,$<no>3);$$->type = intType;}
-    | expr LT expr {$$ = makeOperatorNode(NODE_LT,"<",$<no>1,$<no>3); $$->type = booltype;}
-    | expr GT expr {$$ = makeOperatorNode(NODE_GT,">",$<no>1,$<no>3); $$->type = booltype;}
-    | expr NE expr {$$ = makeOperatorNode(NODE_NE,"!=",$<no>1,$<no>3); $$->type = booltype;}
-    | expr LTE expr {$$ = makeOperatorNode(NODE_LTE,"<=",$<no>1,$<no>3); $$->type = booltype;}
-    | expr GTE expr {$$ = makeOperatorNode(NODE_GTE,">=",$<no>1,$<no>3); $$->type = booltype;}
-    | expr EQ expr {$$ = makeOperatorNode(NODE_EQ,"==",$<no>1,$<no>3); $$->type = booltype;}
-    | expr AND expr {$$ = makeOperatorNode(NODE_AND,"&&",$<no>1,$<no>3);$$->type = booltype;}
-    | expr OR expr {$$ = makeOperatorNode(NODE_OR,"||",$<no>1,$<no>3);$$->type = booltype;}
-    | NOT expr {$$ = makeOperatorNode(NODE_NOT,"!",NULL,$<no>2);$$->type = booltype;}
+    | expr LT expr {$$ = makeOperatorNode(NODE_LT,"<",$<no>1,$<no>3); $$->type = boolType;}
+    | expr GT expr {$$ = makeOperatorNode(NODE_GT,">",$<no>1,$<no>3); $$->type = boolType;}
+    | expr NE expr {$$ = makeOperatorNode(NODE_NE,"!=",$<no>1,$<no>3); $$->type = boolType;}
+    | expr LTE expr {$$ = makeOperatorNode(NODE_LTE,"<=",$<no>1,$<no>3); $$->type = boolType;}
+    | expr GTE expr {$$ = makeOperatorNode(NODE_GTE,">=",$<no>1,$<no>3); $$->type = boolType;}
+    | expr EQ expr {$$ = makeOperatorNode(NODE_EQ,"==",$<no>1,$<no>3); $$->type = boolType;}
+    | expr AND expr {$$ = makeOperatorNode(NODE_AND,"&&",$<no>1,$<no>3);$$->type = boolType;}
+    | expr OR expr {$$ = makeOperatorNode(NODE_OR,"||",$<no>1,$<no>3);$$->type = boolType;}
+    | NOT expr {$$ = makeOperatorNode(NODE_NOT,"!",NULL,$<no>2);$$->type = boolType;}
     | '(' expr ')' {$$=$<no>2;}
     | Identifier {$$=$<no>1;}
     | NUM {$$=makeNumberNode(NODE_CONSTANT,$<num>1);}
     | STRING {$$=$<no>1;}
-    | BREAKPOINT {$$=makeIdNode(NODE_BREAK_POINT,$<ch>1,NULL,NULL);}
+    | ALLOC'('')' {$$=makeIdNode(NODE_ALLOC,"alloc",NULL,NULL);}
+    | INITIALIZE'('')' {$$=makeIdNode(NODE_INITIALIZE,"initialize",NULL,NULL);}
+    | FREE'(' expr ')' {$$=makeIdNode(NODE_FREE,"free",$<no>3,NULL);}       
+    | VAR_NULL {$$=makeIdNode(NODE_VAR_NULL,"null",NULL,NULL);} 
+    | Field {
+               $$=$<no>1;
+            }
     ;
+
+Field : Field POINT ID {$$=makeConnectorNode(NODE_FIELD,".",$<no>1,makeIdNode(NODE_FIELD_VAR,$<ch>3,NULL,NULL));}
+      | ID POINT ID {$$=makeConnectorNode(NODE_FIELD,".",makeIdNode(NODE_FIELD_VAR,$<ch>1,NULL,NULL),makeIdNode(NODE_FIELD_VAR,$<ch>3,NULL,NULL));}
+      ;
 
 ArgList : ArgList ',' expr {$$=makeConnectorNode(NODE_ARGLIST,".",$<no>1,$<no>3);}
         | expr {$$=$<no>1;}

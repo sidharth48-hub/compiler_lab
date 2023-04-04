@@ -1,7 +1,9 @@
 extern int bind;
+extern struct Typetable *Thead;
 extern struct Gsymbol *shead;
 extern struct Lsymbol *Lhead;
 extern struct Paramstruct *phead;
+extern struct Typetable *Field_head;
 extern int yylineno;
 extern char *yytext;
 extern int reg;
@@ -11,9 +13,28 @@ extern int continue_arr[100];
 extern int break_index;
 extern int continue_index;
 
+extern struct Typetable *boolType;
+extern struct Typetable *intType;
+extern struct Typetable *stringType;
+
+typedef struct Typetable{
+    char *name;                 //type name
+    int size;                   //size of the type
+    struct Fieldlist *fields;   //pointer to the head of fields list
+    struct Typetable *next;     // pointer to the next type table entry
+}Typetable;
+
+typedef struct Fieldlist{
+  char *name;              //name of the field
+  int fieldIndex;          //the position of the field in the field list
+  struct Typetable *type;  //pointer to type table entry of the field's type
+  struct Fieldlist *next;  //pointer to the next field
+}Fieldlist;
+
+
 typedef struct tnode{
     int val;        // value (for constants)
-    int type;       // type of the variable
+    struct Typetable *type;       // type of the variable
     char* varname;  // variable name (for variable nodes)
     int size;
     int nodetype;   // node type - // information about non-leaf nodes at the bottom
@@ -22,16 +43,10 @@ typedef struct tnode{
     struct tnode *left,*right;  //left and right branches
 }tnode;
 
-typedef struct Stack {
-    int break_label;
-    int cont_label;
-    unsigned capacity;
-    int* array;
-}Stack;
 
 typedef struct Gsymbol {
     char* name;       // name of the variable
-    int type;         // type of the variable int-1 , string-2
+    struct Typetable *type;         // type of the variable int-1 , string-2
     int size; 
     int binding;      // stores the static memory address allocated to the variable
     struct Paramstruct *paramlist;
@@ -41,28 +56,56 @@ typedef struct Gsymbol {
 
 typedef struct Lsymbol{
     char *name;
-    int type;
+    struct Typetable *type;
     int binding;
     struct Lsymbol *next;
 }Lsymbol;
 
 typedef struct Paramstruct {
     char *name;
-    int type;
+    struct Typetable *type;
     struct Paramstruct *next;
 }Paramstruct;
+
+//////////////////////////////////////
+///////Type Table Node functions//////
+struct tnode *makeTypeNameNode(char *name,int nodetype);
+
+struct tnode *makeTypeConnector(int nodetype,struct tnode *left,struct tnode *right);
+
+//////////////////////////////////////
+
+
+////////////////////////////////////////
+///////Type Table Creation Fuctions/////
+
+void TypetableCreate();
+
+void FInstall(char *typename,char *varname);
+
+void createFieldlist(struct tnode *root);
+
+void TInstall(char *name);
+
+void TypetableEntry(struct tnode *root);
+
+struct Typetable *TLookup(char *name);
+
+struct Fieldlist *FLookup(struct Fieldlist *root,char *name);
+
+void printTypetable();
 
 /////////////////////////////////////
 /////Global Decl functions////
 struct tnode* createDeclTree(char *c,int size,int nodetype,struct tnode *left,struct tnode *right);
 
-struct tnode* makeDataTypeNode(int type,struct tnode *left);
+struct tnode* makeDataTypeNode(int nodetype,struct tnode *left,struct tnode *right);
 
 struct tnode* makeIdNodeDecl(int nodetype,char *str,int size,struct tnode *left);
 
 struct tnode* makeDeclNode(int nodetype,struct tnode *l, struct tnode *r);
 
-struct tnode* makeParamNode(int nodetype,int type, struct tnode *left);
+struct tnode* makeParamNode(int nodetype,struct tnode *left,struct tnode *right);
 
 void printDecl(struct tnode *t);
 
@@ -76,13 +119,13 @@ int getfLabel();
 
 struct Paramstruct *ParamLookup(char *name);
 
-void createParamNode(char *name,int type);
+void createParamNode(char *name,struct Typetable *type);
 
 void createParamList(struct tnode *root);
 
-void Install(char *name, int type, int size,int nodetype,struct Paramstruct *paramlist);
+void Install(char *name, struct Typetable *type, int size,int nodetype,struct Paramstruct *paramlist);
 
-void GsymbolEntry(int type, struct tnode *root);
+void GsymbolEntry(struct Typetable *type, struct tnode *root);
 
 struct Gsymbol *Lookup(char *name);
 
@@ -99,7 +142,7 @@ struct tnode* createLDeclTree(char *c,int nodetype,struct tnode *left,struct tno
 
 struct tnode* makeLDeclConnectorNode(int nodetype,struct tnode *l,struct tnode *r);
 
-struct tnode* makeLDeclTypeNode(int type,struct tnode *l);
+struct tnode* makeLDeclTypeNode(int nodetype,struct tnode *l,struct tnode *r);
 
 struct tnode* makeLDeclIdNode(int nodetype,char *str);
 
@@ -111,11 +154,11 @@ int getLocalBindParam();
 
 int getLocalBindDecl();
 
-void LInstall(char *name, int type,int nodetype);
+void LInstall(char *name, struct Typetable *type,int nodetype);
 
 void LsymbolEntryParam(struct tnode *root);
 
-void LsymbolEntryDeclVar(int type,struct tnode *root);
+void LsymbolEntryDeclVar(struct Typetable *type,struct tnode *root);
 
 void LsymbolEntryDecl(struct tnode *root);
 
@@ -144,13 +187,11 @@ struct tnode* makeFuncConnectorNode(int nodetype,struct tnode *l,struct tnode *r
 
 struct tnode* makeFuncIdNode(int nodetype,char *str,struct tnode *l,struct tnode *r);
 
-struct tnode* makeFuncTypeNode(int type);
-
 struct tnode* makeReturnNode(int nodetype,struct tnode *l);
 
 void TypeCheckFunction(struct tnode *root);
 
-void CheckNumParams(struct tnode *paramtree,struct Paramstruct *list);
+void CheckNumParams(struct tnode *paramtree);
 
 void numParams(struct Paramstruct *list);
 
@@ -160,9 +201,9 @@ void push_localVar(struct tnode *root,FILE *fptr);
 
 void pop_localVar(struct tnode *root,FILE *fptr);
 
-void TypeCheckRet(struct tnode *root,int functype);
+void TypeCheckRet(struct tnode *root,struct Typetable *functype);
 
-void create_ret(struct tnode *root,int functype,FILE *fptr);
+void create_ret(struct tnode *root,struct Typetable *functype,FILE *fptr);
 
 void create_functions(struct tnode *root,FILE *fptr);
 
@@ -182,8 +223,6 @@ struct tnode* makewriteNode(int nodetype,struct tnode *t);
 struct tnode* makeConnectorNode(int nodetype,char *c, struct tnode *l, struct tnode *r);
 
 struct tnode* makeOperatorNode(int nodetype,char *c, struct tnode *l, struct tnode *r);
-
-struct tnode* makeMainTypeNode(int type);
 
 ////IF_BLOCK////////
 
@@ -259,7 +298,7 @@ void function_call_AtoB(struct tnode *root,FILE *fptr);
 
 int function_call(struct tnode *root,FILE *fptr);
 
-void CheckFuncVar(struct Paramstruct *list,struct tnode *root);
+void CheckFuncVar(struct tnode *root);
 
 void TypeCheckFunc_call(struct tnode *root);
 
@@ -325,3 +364,20 @@ void callbreak(FILE *fptr);
 void callcontinue(FILE *fptr);
 
 ///////////////////////////////////////////
+
+
+/////////////DYNAMic ALLOC///////////////
+
+int calldynamic(FILE *fptr,struct tnode *root);
+
+int callnull(FILE *fptr);
+
+void fieldVars(FILE *fptr,int r,struct tnode *root);
+
+int callfield(FILE *fptr,struct tnode *root);
+
+int setupFieldVar(FILE *fptr,struct tnode *root,int r);
+
+void findTypeField(struct tnode *root);
+
+void printField(struct tnode *root);
