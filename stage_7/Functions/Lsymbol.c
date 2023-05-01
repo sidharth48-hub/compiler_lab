@@ -12,20 +12,25 @@ int getLocalBindDecl()
     return LocalBind++;
 }
 
-void LInstall(char *name, struct Typetable *type,int nodetype)
+void LInstall(char *name,char *type,int nodetype)
 {
     struct Lsymbol* node;
     node = (struct Lsymbol*)malloc(sizeof(struct Lsymbol));
     node->name = name;
-    node->type = type;
+    node->type = TLookup(type);
+    node->classtable = Clookup(type);
     
     if(nodetype==NODE_PARAM)
     {
         node->binding = getLocalBindParam();
     }
-    else
+    else if(nodetype == NODE_VARIABLE)
     {
         node->binding = getLocalBindDecl();
+    }
+    else if(nodetype == NODE_SELF)
+    {
+        node->binding = getLocalBindParam();
     }
 
     if(Lhead==NULL)
@@ -50,13 +55,13 @@ void LsymbolEntryParam(struct tnode *root)
 {
     if(root->nodetype == NODE_PARAM)
     {
-        struct Typetable *type = TLookup(root->left->varname);
+        //struct Typetable *type = TLookup(root->left->varname);
         if(root->right->varname!=NULL && LLookup(root->right->varname,Lhead)!=NULL)
         {
             printf("Error!!! Local variables with same name\n");
             exit(1);
         }
-        LInstall(root->right->varname,type,root->nodetype);
+        LInstall(root->right->varname,root->left->varname,root->nodetype);
     }
 
     if(root->left!=NULL)
@@ -65,7 +70,7 @@ void LsymbolEntryParam(struct tnode *root)
         LsymbolEntryParam(root->right);    
 }
 
-void LsymbolEntryDeclVar(struct Typetable *type,struct tnode *root)
+void LsymbolEntryDeclVar(char *type,struct tnode *root)
 {
     if(root->nodetype == NODE_VARIABLE)
     {
@@ -87,8 +92,8 @@ void LsymbolEntryDecl(struct tnode *root)
 {
     if(root->nodetype==NODE_LTYPE)
     {
-        struct Typetable *type = TLookup(root->left->varname);
-        LsymbolEntryDeclVar(type,root->right);
+        //struct Typetable *type = TLookup(root->left->varname);
+        LsymbolEntryDeclVar(root->left->varname,root->right);
         return;
     }
 
@@ -98,13 +103,20 @@ void LsymbolEntryDecl(struct tnode *root)
         LsymbolEntryDecl(root->right);
 }
 
+void LsymbolEntrySelf()
+{
+    LInstall("self",NULL,NODE_SELF);
+}
+
 struct Lsymbol* LsymbolEntry(struct tnode *paramlist,struct tnode *Ldeclblock)
 {
     Lhead = NULL;
     
     LocalBind = -3;
     if(paramlist!=NULL)
-        LsymbolEntryParam(paramlist);
+        LsymbolEntryParam(paramlist)
+
+    LsymbolEntrySelf();//entry for self        
 
     LocalBind = 1;
     if(Ldeclblock!=NULL)
@@ -134,7 +146,7 @@ void LinkLocalTable(struct Lsymbol *Lhead,struct tnode *root)
 {
     // if(root->varname!=NULL)
     //     printf("%s\n",root->varname);
-    if(root->nodetype==NODE_FIELD)
+    if(root->nodetype==NODE_CLASSFIELD || root->nodetype == NODE_CLASSFIELD_FUNCTION)
     {
         struct tnode *node = root;
         
@@ -155,6 +167,8 @@ void LinkLocalTable(struct Lsymbol *Lhead,struct tnode *root)
         root->lentry = temp;
         return;
     }
+
+    
 
     if(root->left!=NULL)
         LinkLocalTable(Lhead,root->left);

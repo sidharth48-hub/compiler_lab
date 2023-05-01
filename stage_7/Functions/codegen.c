@@ -37,7 +37,9 @@ int codegen(struct tnode *root,FILE *fptr)
 
         case NODE_STRINGS: return setupvariable(root,fptr);
 
-        case NODE_FIELD_VAR: return setupvariable(root,fptr);
+        case NODE_SELF: return setupvariable(root, fptr);
+
+        case NODE_CLASSFIELD_VAR: return setupvariable(root,fptr);
 
         case NODE_VAR_FUNC_CALL: return function_call(root,fptr);                                              
 
@@ -64,9 +66,13 @@ int codegen(struct tnode *root,FILE *fptr)
         case NODE_INITIALIZE:
         case NODE_FREE: return calldynamic(fptr,root);
 
+        case NODE_NEW: return call_classnew(fptr);
+
         case NODE_VAR_NULL: return callnull(fptr);
 
-        case NODE_FIELD: return callfield(fptr,root);                                                                                                                                                                          
+        case NODE_CLASSFIELD: return callfield(fptr,root);
+
+        case NODE_CLASSFIELD_FUNCTION: return call_classFunction(fptr,root);                                                                                                                                                                          
     }
 
 
@@ -108,7 +114,7 @@ int codegen(struct tnode *root,FILE *fptr)
     }
 }
 
-void codegenerator(struct tnode *F_root,struct tnode *M_root)
+void codegenerator(struct tnode *C_root,struct tnode *F_root,struct tnode *M_root)
 {
 
     FILE *fptr = fopen("./exptree.o", "w");
@@ -129,6 +135,9 @@ void codegenerator(struct tnode *F_root,struct tnode *M_root)
         exit(1);
     }
     create_functions(M_root,fptr); //creates code for main function
+
+    if(C_root!=NULL)
+       create_functions(C_root,fptr); //creates code for class methods
     
     if(F_root!=NULL)
         create_functions(F_root,fptr);//creates code for functions

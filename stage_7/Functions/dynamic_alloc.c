@@ -68,7 +68,7 @@ int callnull(FILE *fptr)
 
 void fieldVars(FILE *fptr,int r,struct tnode *root)
 {
-    if(root->nodetype == NODE_FIELD_VAR)
+    if(root->nodetype == NODE_CLASSFIELD_VAR)
     {
         int temp_reg = codegen(root,fptr);
 
@@ -92,7 +92,7 @@ void fieldVars(FILE *fptr,int r,struct tnode *root)
         fieldVars(fptr,r,root->left);
     }
 
-    if(root->nodetype == NODE_FIELD)
+    if(root->nodetype == NODE_CLASSFIELD)
     {
 
         fprintf(fptr,"MOV R%d,[R%d]\n",r,r);
@@ -110,10 +110,34 @@ void fieldVars(FILE *fptr,int r,struct tnode *root)
     }
 }
 
+int findClassFieldorNot(struct tnode *root)
+{
+    struct tnode *temp = root;
+
+    while(temp->left!=NULL)
+    {
+        temp = temp->left;
+    }
+
+    if(temp->classtable!=NULL)
+    {
+        return 1;
+    }
+
+    return 0;
+}
+
 int callfield(FILE *fptr,struct tnode *root)
 {
     int r = getReg();
-    fieldVars(fptr,r,root);
+    if(findClassFieldorNot(root))
+    {
+        call_ClassField(fptr,r,root);
+    }
+    else
+    {
+        fieldVars(fptr,r,root);
+    }    
     return r;
 }
 
@@ -141,7 +165,7 @@ int setupFieldVar(FILE *fptr,struct tnode *root,int r)
 
 void findTypeField(struct tnode *root)
 {
-    if(root->nodetype == NODE_FIELD_VAR)
+    if(root->nodetype == NODE_CLASSFIELD_VAR)
     {
         if(root->lentry!=NULL)
         {
@@ -159,7 +183,7 @@ void findTypeField(struct tnode *root)
         findTypeField(root->left);
     }
 
-    if(root->nodetype == NODE_FIELD)
+    if(root->nodetype == NODE_CLASSFIELD)
     {
         struct tnode *right = root->right;
         char *fieldname = right->varname;
@@ -174,7 +198,7 @@ void findTypeField(struct tnode *root)
 
 void printField(struct tnode *root)
 {
-    if(root->nodetype == NODE_FIELD_VAR)
+    if(root->nodetype == NODE_CLASSFIELD_VAR)
     {
         printf("%s\n",root->varname);
         return;
@@ -185,7 +209,7 @@ void printField(struct tnode *root)
         printField(root->left);
     }
 
-    if(root->nodetype == NODE_FIELD)
+    if(root->nodetype == NODE_CLASSFIELD)
     {
         struct tnode *right = root->right;
         char *fieldname = right->varname;

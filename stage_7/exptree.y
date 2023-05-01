@@ -11,6 +11,7 @@
     #include "typedef.h"
     #include "./Functions/exptree.c"
     #include "./Functions/break_cont.c"
+    #include "./Functions/class_alloc.c"
     #include "./Functions/class.c"
     #include "./Functions/codegen.c"
     #include "./Functions/dynamic_alloc.c"
@@ -26,8 +27,11 @@
     int yylex(void);
     int yyerror();
 
-    struct Classtable *Cptr;
-    struct Paramstruct *paramptr;
+    struct Classtable *Cptr = NULL;
+    struct Typetable *Tptr = NULL;
+    char *Gname;
+    struct Paramstruct *paramptr = NULL;
+    struct Fieldlist *typefieldlist = NULL;
 %}
 
 %union{
@@ -36,12 +40,12 @@
     int num;
 };
 
-%type <no> TypeDefBlock TypeDefList TypeDef FieldDecList FieldDecL TypeName
+%type <no> TypeDefBlock TypeDefList TypeName TypeDef FieldDecList FieldDecL
 %type <no> ClassDefBlock ClassDefList ClassDef Cname Fieldlists Fld MethodDecl MDecl MethodDefns classstmt classField classFieldFunction
-%type <no> GDeclBlock DeclList Decl VarList IdDecl ParamList Param
+%type <no> GDeclBlock DeclList Decl VarList IdDecl ParamList Param GDeclTypeName
 %type <no> FdefBlock Fdef Body returnstmt
 %type <no> LdeclBlock LDecList LDecl IdList
-%type <no> program Slist InputStmt OutputStmt AssgStmt expr stmt Ifstmt Whilestmt breakstmt continuestmt breakpointstmt dowhilestmt repuntilstmt Identifier MainBlock Field ArgList
+%type <no> program Slist InputStmt OutputStmt AssgStmt expr stmt Ifstmt Whilestmt breakstmt continuestmt breakpointstmt dowhilestmt repuntilstmt Identifier MainBlock ArgList
 %token TYPE ENDTYPE ALLOC INITIALIZE FREE VAR_NULL
 %token CLASS ENDCLASS SELF NEW DELETE
 %token START END DECL ENDDECL INT STR SEMICOLON RETURN BREAKPOINT POINT
@@ -61,37 +65,40 @@
 
 %%
 
-program : TypeDefBlock GDeclBlock FdefBlock MainBlock {codegenerator($<no>3,$<no>4);}
-        | TypeDefBlock GDeclBlock MainBlock {codegenerator(NULL,$<no>3);}
-        | TypeDefBlock FdefBlock MainBlock {codegenerator($<no>2,$<no>3);}
-        | TypeDefBlock MainBlock  {codegenerator(NULL,$<no>2);}
-        | GDeclBlock FdefBlock MainBlock {codegenerator($<no>2,$<no>3);}
-        | GDeclBlock MainBlock {codegenerator(NULL,$<no>2);}
-        | FdefBlock MainBlock {codegenerator($<no>1,$<no>2);}
-        | MainBlock {codegenerator(NULL,$<no>1);}
+program : TypeDefBlock ClassDefBlock GDeclBlock FdefBlock MainBlock {codegenerator($<no>2,$<no>4,$<no>5);}
+        | TypeDefBlock ClassDefBlock GDeclBlock MainBlock {codegenerator($<no>2,NULL,$<no>4);}
+        | TypeDefBlock ClassDefBlock FdefBlock MainBlock {codegenerator($<no>2,$<no>3,$<no>4);}
+        | TypeDefBlock ClassDefBlock MainBlock  {codegenerator(,$<no>2,NULL,$<no>3);}
+        | GDeclBlock FdefBlock MainBlock {codegenerator(NULL,$<no>2,$<no>3);}
+        | GDeclBlock MainBlock {codegenerator(NULL,NULL,$<no>2);}
+        | FdefBlock MainBlock {codegenerator(NULL,$<no>1,$<no>2);}
+        | MainBlock {codegenerator(NULL,NULL,$<no>1);}
         ;
 
 /*----------------TYPE DEFINITION BLOCK--------------------------------*/
 
-TypeDefBlock : TYPE TypeDefList ENDTYPE {$$=$<no>2;
-                                         TypetableCreate();
-                                         TypetableEntry($<no>2);
-                                        }
-             | TYPE ENDTYPE {}
+TypeDefBlock : TYPE TypeDefList ENDTYPE {}
+             | TYPE ENDTYPE {if(Thead == NULL) TypetableCreate();}
              ;
 
-TypeDefList : TypeDefList TypeDef {$$=makeTypeConnector(NODE_CONNECTOR,$<no>1,$<no>2);}
-            | TypeDef {$$=$<no>1;}
+TypeDefList : TypeDefList TypeDef {}
+            | TypeDef {}
             ;
 
-TypeDef : ID '{' FieldDecList '}' {$$=makeTypeConnector(NODE_TYPEDEF,makeIdNode(NODE_USERID,$<ch>1,NULL,NULL),$<no>3);}
+TypeDef : TName '{' FieldDecList '}' {Tptr->fields = typefieldlist;}
         ;
 
-FieldDecList : FieldDecList FieldDecL {$$=makeTypeConnector(NODE_CONNECTOR,$<no>1,$<no>2);}
-             | FieldDecL {$$=$<no>1;}
+TName : ID {
+             if(Thead == NULL) TypetableCreate(); 
+             Tptr = TInstall($<ch>1);
+            }
+      ;
+
+FieldDecList : FieldDecList FieldDecL {}
+             | FieldDecL {}
              ;
 
-FieldDecL : TypeName ID SEMICOLON {$$=makeTypeConnector(NODE_TYPE_FIELD,$<no>1,makeIdNode(NODE_TYPEID,$<ch>2,NULL,NULL));}
+FieldDecL : TypeName ID SEMICOLON {typefieldlist = Type_FieldInstall($<no>1->varname,$<ch>2);}
           ;
 
 TypeName : INT {$$=makeTypeNameNode("int",NODE_TYPENAME);}
@@ -104,54 +111,56 @@ TypeName : INT {$$=makeTypeNameNode("int",NODE_TYPENAME);}
 
 /*--------------------CLASS DEFINITION BLOCK---------------------------------*/
 
-ClassDefBlock   : CLASS ClassDefList ENDCLASS {}
-                |
+ClassDefBlock   : CLASS ClassDefList ENDCLASS {$$=$<no>2;}
+                | CLASS ENDCLASS {}
                 ;
-ClassDefList    : ClassDefList ClassDef {}
-                | ClassDef {}
-                ;
-
-ClassDef        : Cname '{'DECL Fieldlists MethodDecl ENDDECL MethodDefns '}' {}
+ClassDefList    : ClassDefList ClassDef {$$=makeConnectorNode(NODE_CONNECTOR,".",$<no>1,$<no>2);}
+                | ClassDef {$$=$<no>1;}
                 ;
 
-Cname           : ID        {Cptr = Cinstall($<ch>1,NULL);}
+ClassDef        : Cname '{'DECL Fieldlists MethodDecl ENDDECL MethodDefns '}' {$$=makeClassMethodNode(NODE_CLASS_METHOD,$<no>7);Cptr = NULL;}
+                | Cname '{'DECL Fieldlists MethodDecl ENDDECL '}' {}
+                ;
+
+Cname           : ID        {Cptr = CInstall($<ch>1,NULL);}
                 ;
 
 Fieldlists      : Fieldlists Fld {}
                 | Fld {}
                 ;
 
-Fld             : ID ID SEMICOLON  {Class_Finstall(Cptr,$<ch>1,$<ch>2);} //Installing the field to the class
+Fld             : TypeName ID SEMICOLON  {Class_Finstall(Cptr,$<no>1->varname,$<ch>2);} //Installing the field to the class
                 ;
 
 MethodDecl      : MethodDecl MDecl {}
                 | MDecl {}
                 ;
 
-MDecl           : ID ID '(' ParamList ')' SEMICOLON {
-                                                     paramptr = NULL;
-                                                     Class_Minstall(Cptr,$<ch>2,TLookup($<ch>1),paramptr);
-                                                     }
-                | ID ID '('')' SEMICOLON {Class_Minstall(Cptr,$<ch>2,TLookup($<ch>1),NULL);}
+MDecl           : TypeName ID '(' ParamList ')' SEMICOLON {Class_Minstall(Cptr,$<ch>2,TLookup($<no>1->varname),paramptr);
+                                                            paramptr = NULL;
+                                                          }
+                | TypeName ID '('')' SEMICOLON {Class_Minstall(Cptr,$<ch>2,TLookup($<no>1->varname),NULL);}
                 ;
 
-MethodDefns     : FdefBlock
+MethodDefns     : FdefBlock {$$=$<no>1;}
                 ;
 
-classstmt       : expr SEMICOLON
-                | NEW '(' ID ')' SEMICOLON
-                | NEW '(' ID ')' SEMICOLON
-                | DELETE '(' classField ')' SEMICOLON
+classstmt       : expr {$$=$<no>1;}
+                | NEW '(' Identifier ')' {$$=makeClassNewNode(NODE_NEW,"new",$<no>3);}
+                | DELETE '(' classField ')' {$$=makeClassDeleteNode(NODE_DELETE,"delete",$<no>3);}
                 ;
 
-classField      : SELF POINT ID
-                | ID POINT ID   //This will not occur inside a class.
-                | classField POINT ID
+classField      : SELF POINT ID {$$=makeSelfClassFieldNode(NODE_CLASSFIELD,".",makeSelfNode(NODE_SELF,"self",Cptr),makeClassIdNode(NODE_CLASSFIELD_VAR,$<ch>3,NULL,NULL,Cptr));}
+                | classField POINT ID {$$=makeClassFieldNode(NODE_CLASSFIELD,".",$<no>1,makeClassIdNode(NODE_CLASSFIELD_VAR,$<ch>3,NULL,NULL,Cptr));}
+                | ID POINT ID  {$$=makeClassFieldNode(NODE_CLASSFIELD,".",makeClassIdNode(NODE_CLASSFIELD_VAR,$<ch>1,NULL,NULL,Cptr),makeClassIdNode(NODE_CLASSFIELD_VAR,$<ch>3,NULL,NULL,Cptr));}
                 ;
 
-classFieldFunction   : SELF POINT ID '(' Arglist ')'
-                     | ID POINT ID '(' Arglist ')'   //This will not occur inside a class.
-                     | classField POINT ID '(' Arglist ')'
+classFieldFunction   : SELF POINT ID '(' ArgList ')'       {$$=makeClassFieldNode(NODE_CLASSFIELD_FUNCTION,".",makeSelfNode(NODE_SELF,"self",Cptr),makeClassIdNode(NODE_VARIABLE,$<ch>1,$<no>5,NULL,Cptr));}
+                     | classField POINT ID '(' ArgList ')' {$$=makeClassFieldNode(NODE_CLASSFIELD_FUNCTION,".",$<no>1,makeClassIdNode(NODE_VARIABLE,$<ch>1,$<no>5,NULL,Cptr));}
+                     | ID POINT ID '(' ArgList ')'         {$$=makeClassFieldNode(NODE_CLASSFIELD_FUNCTION,".",makeIdNode(NODE_VARIABLE,$<ch>1,NULL,NULL),makeClassIdNode(NODE_VARIABLE,$<ch>3,$<no>5,NULL,Cptr));}
+                     | SELF POINT ID '('')'                {$$=makeClassFieldNode(NODE_CLASSFIELD_FUNCTION,".",makeSelfNode(NODE_SELF,"self",Cptr),$<no>3),makeClassIdNode(NODE_VARIABLE,$<ch>1,$<no>5,NULL,Cptr));}
+                     | classField POINT ID '('')'          {$$=makeClassFieldNode(NODE_CLASSFIELD_FUNCTION,".",$<no>1,makeClassIdNode(NODE_VARIABLE,$<ch>1,NULL,NULL,Cptr));}
+                     | ID POINT ID '('')'                  {$$=makeClassFieldNode(NODE_CLASSFIELD_FUNCTION,".",makeIdNode(NODE_VARIABLE,$<ch>1,NULL,NULL),makeClassIdNode(NODE_VARIABLE,$<ch>3,NULL,NULL,Cptr));}
                      ;
 
 
@@ -160,38 +169,34 @@ classFieldFunction   : SELF POINT ID '(' Arglist ')'
 
 /*-----------------GLOBAL DECL BLOCK-----------------------------------*/
 
-GDeclBlock : DECL DeclList ENDDECL {$$=$<no>2;}
+GDeclBlock : DECL DeclList ENDDECL {}
            | DECL ENDDECL {}
            ;
 
-DeclList : DeclList Decl {$$=makeDeclNode(NODE_CONNECTOR,$<no>1,$<no>2);}
-         | Decl {$$=$<no>1;}
+DeclList : DeclList Decl {}
+         | Decl {}
          ;
 
-Decl : TypeName VarList SEMICOLON {$$=makeDataTypeNode(NODE_CONNECTOR,$<no>1,$<no>2);
-                               struct Typetable *type = TLookup($<no>1->varname);
-                               GsymbolEntry(type,$<no>2);
-                               }
+Decl : GDeclTypeName VarList SEMICOLON {}
      ;
 
-VarList : VarList ',' IdDecl {$$=makeDeclNode(NODE_CONNECTOR,$<no>1,$<no>3);}
-        | IdDecl {$$=$<no>1;}
+GDeclTypeName : TypeName {Gname = $<no>1->varname;}
+              ;
+
+VarList : VarList ',' IdDecl {}
+        | IdDecl {}
         ;
 
-IdDecl : ID {$$=makeIdNodeDecl(NODE_VARIABLE,$<ch>1,0,NULL);}
-        | ID'[' NUM ']' {$$=makeIdNodeDecl(NODE_VAR_ARRAY,$<ch>1,$<num>3,NULL);}
-        | ID'(' ParamList ')' {
-                                $$=makeIdNodeDecl(NODE_VAR_PARAMLIST,$<ch>1,0,$<no>3);
-                              }                                      
+IdDecl : ID {GInstall($<ch>1,Gname,0,NULL,NODE_VARIABLE);}
+        | ID'[' NUM ']' {GInstall($<ch>1,Gname,$<num>3,NULL,NODE_VAR_ARRAY);}
+        | ID'(' ParamList ')' {GInstall($<ch>1,Gname,$<num>3,paramptr,NODE_VAR_PARAMLIST);}                                      
         ;
 
-ParamList : ParamList ',' Param {$$=makeDeclNode(NODE_CONNECTOR,$<no>1,$<no>3);}
-          | Param  {$$=$<no>1;}
+ParamList : ParamList ',' Param {}
+          | Param  {}
           ;
 
-Param : TypeName ID {$$=makeParamNode(NODE_PARAM,$<no>1,makeIdNodeDecl(NODE_PARAM_VARIABLE,$<ch>2,0,NULL));
-                     Param_Install(paramptr,$<ch>1,$<ch>2);
-                    }
+Param : TypeName ID {paramptr = Param_Install(paramptr,$<no>1->varname,$<ch>2);}
       ;              
 
 /*---------------------------------------------------------------------------*/
@@ -357,16 +362,13 @@ expr : expr PLUS expr {$$ = makeOperatorNode(NODE_ADD,"+",$<no>1,$<no>3);$$->typ
     | INITIALIZE'('')' {$$=makeIdNode(NODE_INITIALIZE,"initialize",NULL,NULL);}
     | FREE'(' expr ')' {$$=makeIdNode(NODE_FREE,"free",$<no>3,NULL);}       
     | VAR_NULL {$$=makeIdNode(NODE_VAR_NULL,"null",NULL,NULL);} 
-    | Field {
-               $$=$<no>1;
-            }
     | classField {$$=$<no>1;}
     | classFieldFunction {$$=$<no>1;}        
     ;
 
-Field : Field POINT ID {$$=makeConnectorNode(NODE_FIELD,".",$<no>1,makeIdNode(NODE_FIELD_VAR,$<ch>3,NULL,NULL));}
-      | ID POINT ID {$$=makeConnectorNode(NODE_FIELD,".",makeIdNode(NODE_FIELD_VAR,$<ch>1,NULL,NULL),makeIdNode(NODE_FIELD_VAR,$<ch>3,NULL,NULL));}
-      ;
+// Field : Field POINT ID {$$=makeConnectorNode(NODE_FIELD,".",$<no>1,makeIdNode(NODE_FIELD_VAR,$<ch>3,NULL,NULL));}
+//       | ID POINT ID {$$=makeConnectorNode(NODE_FIELD,".",makeIdNode(NODE_FIELD_VAR,$<ch>1,NULL,NULL),makeIdNode(NODE_FIELD_VAR,$<ch>3,NULL,NULL));}
+//       ;
 
 ArgList : ArgList ',' expr {$$=makeConnectorNode(NODE_ARGLIST,".",$<no>1,$<no>3);}
         | expr {$$=$<no>1;}

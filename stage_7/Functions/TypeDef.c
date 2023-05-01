@@ -1,5 +1,3 @@
-///////////TYPE TABLE NODE CREATION FUNCTIONS/////////////////////////
-
 struct tnode *makeTypeNameNode(char *name,int nodetype)
 {
     struct tnode *temp;
@@ -11,16 +9,6 @@ struct tnode *makeTypeNameNode(char *name,int nodetype)
     return temp;
 }
 
-struct tnode *makeTypeConnector(int nodetype,struct tnode *left,struct tnode *right)
-{
-    struct tnode *temp;
-    temp = (struct tnode*)malloc(sizeof(struct tnode));
-    temp->nodetype=nodetype;
-    temp->varname = NULL;
-    temp->left = left;
-    temp->right = right;
-    return temp;
-}
 
 
 /// TYPE TABLE CREATION FUNCTIONS ///////////////////////////////////////////////////
@@ -30,7 +18,7 @@ struct Typetable *intType;
 struct Typetable *stringType;
 struct Typetable *boolType;
 
-int fieldIndex = -1;
+int fIndex = -1;
 
 void TypetableCreate()
 {
@@ -51,100 +39,67 @@ void TypetableCreate()
 
     //VOID ENTRY
     TInstall("void");
+    TInstall("null");
 }
 
-void FInstall(char *typename,char *varname)
+struct Fieldlist* Type_FieldInstall(char *typename,char *name)
 {
-    struct Fieldlist *temp;
-    temp = (struct Fieldlist*)malloc(sizeof(struct Fieldlist));
-    temp->name = varname;
+    struct Fieldlist *node;
+    node = (struct Fieldlist*)malloc(sizeof(struct Fieldlist));
+    node->name = name;
 
-    if(fieldIndex == 8)
+    if(fIndex == 8)
     {
         printf("Error!!! More than 8 parameters in the type defintion\n");
     }
-    temp->fieldIndex = ++fieldIndex;
-    temp->type = TLookup(typename);
-    temp->next = NULL;
+    node->fieldIndex = ++fIndex;
+    node->type = TLookup(typename);
+    node->next = NULL;
 
-    struct Fieldlist *temp1 = Fhead;
-
-    if(temp1==NULL)
+    
+    if(Fhead==NULL)
     {
-        Fhead = temp;
-        return;
-    }
-    while(temp1->next!=NULL)
-    {
-        temp1 = temp1->next;
+        Fhead = node;
+        return Fhead;
     }
 
-    temp1->next = temp;
+    struct Fieldlist *temp = Fhead;
+
+    while(temp->next!=NULL)
+    {
+        //printf("%s, %s\n",node->type->name,node->name);
+        temp = temp->next;
+    }
+
+    temp->next = node;
+    return Fhead;
 }
 
-void createFieldlist(struct tnode *root)
-{
-    if(root->nodetype==NODE_TYPE_FIELD)
-    {
-        char *typename = root->left->varname;
-        char *varname = root->right->varname;
-
-        FInstall(typename,varname);
-        return;
-    }
-    if(root->left!=NULL)
-       createFieldlist(root->left);
-    if(root->right!=NULL)
-       createFieldlist(root->right);
-}
-
-void TInstall(char *name)
+struct Typetable* TInstall(char *name)
 {
     struct Typetable *temp;
     temp = (struct Typetable*)malloc(sizeof(struct Typetable));
 
     temp->name = name;
-    temp->fields = Fhead;
+    temp->fields = NULL;
     temp->next = NULL;
-
+    
+    Fhead = NULL;
+    fIndex = -1;
+    
     struct Typetable *temp1 = Thead;
 
     if(temp1==NULL)
     {
         Thead = temp;
-        return;
+        return temp;
     }
     while(temp1->next!=NULL)
     {
         temp1 = temp1->next;
     }
     temp1->next = temp;
-}
-
-void TypetableEntry(struct tnode *root)
-{
-    if(root->nodetype==NODE_TYPEDEF)
-    {
-        struct tnode *user_id = root->left;
-        struct tnode *fieldlist = root->right;
-        
-        Fhead = NULL;
-        fieldIndex = -1;
-
-        TInstall(user_id->varname);
-
-        createFieldlist(fieldlist);
-        
-        struct Typetable *temp = TLookup(user_id->varname);
-        temp->fields = Fhead;
-        
-        return;
-    }
-
-    if(root->left!=NULL)
-       TypetableEntry(root->left);
-    if(root->right!=NULL)
-       TypetableEntry(root->right);   
+    return temp;
 }
 
 struct Typetable *TLookup(char *name)
@@ -185,18 +140,16 @@ void printTypetable()
 
     while(temp!=NULL)
     {
+        printf("------------\n");
         printf("%s\n",temp->name);
 
-        Fhead = temp->fields;
+        struct Fieldlist *Fhead = temp->fields;
 
-        if(Fhead!=NULL)
-        {
             while(Fhead!=NULL)
             {
                 printf("%s %s %d\n",Fhead->type->name,Fhead->name,Fhead->fieldIndex);
                 Fhead = Fhead->next;
             }    
-        }
 
         temp=temp->next;
     }

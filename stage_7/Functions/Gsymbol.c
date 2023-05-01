@@ -16,75 +16,18 @@ int getfLabel()
     flabel++;
 }
 
-struct Paramstruct *ParamLookup(char *name)
-{
-    struct Paramstruct *temp = phead;
-
-    while(temp!=NULL)
-    {
-        if(strcmp(temp->name,name)==0)
-        {
-            return temp;
-        }
-        temp=temp->next;
-    }
-    return NULL;
-}
-
-void createParamNode(char *name,struct Typetable *type)
-{
-    struct Paramstruct* node;
-    node = (struct Paramstruct*)malloc(sizeof(struct Paramstruct));
-    node->name = name;
-    node->type = type;
-
-    if(phead==NULL)
-    {
-        phead = node;
-        node->next = NULL;
-        return;
-    }
-    struct Paramstruct* temp = phead;
-
-    while(temp->next!=NULL)
-    {
-        temp=temp->next;
-    }
-    temp->next = node;
-    node->next = NULL;
-}
-
-void createParamList(struct tnode *root)
-{
-    if(root->nodetype==NODE_PARAM)
-    {
-        struct Typetable *type = TLookup(root->left->varname);
-
-        if(root->right->varname!=NULL)
-        {
-            if(ParamLookup(root->right->varname)!=NULL)
-            {
-                printf("Error!!! parameters with same name in function declaration\n");
-                exit(1);
-            }
-            createParamNode(root->right->varname,type);
-        }        
-    }
-    if(root->left!=NULL)
-        createParamList(root->left);
-
-    if(root->right!=NULL)
-       createParamList(root->right);
-}
-
-void Install(char *name, struct Typetable *type, int size,int nodetype,struct Paramstruct *paramlist)
+void GInstall(char *name, char *type, int size,struct Paramstruct *paramlist,int nodetype)
 {
     struct Gsymbol* node;
     node = (struct Gsymbol*)malloc(sizeof(struct Gsymbol));
     node->name = name;
-    node->type = type;
     node->size = size;
     node->paramlist = paramlist;
+    node->next = NULL;
+    
+
+    node->type = TLookup(type);
+    node->classtable = Clookup(type);
     
     if(nodetype==NODE_VAR_PARAMLIST)
     {
@@ -109,7 +52,6 @@ void Install(char *name, struct Typetable *type, int size,int nodetype,struct Pa
     if(shead==NULL)
     {
         shead = node;
-        node->next = NULL;
         return;
     }
 
@@ -121,34 +63,6 @@ void Install(char *name, struct Typetable *type, int size,int nodetype,struct Pa
     }
 
     temp->next = node;
-    node->next = NULL;
-}
-
-void GsymbolEntry(struct Typetable *type,struct tnode *root)
-{
-    if(root->varname!=NULL && Lookup(root->varname)!=NULL)
-    {
-        printf("Error variables with same name\n");
-        exit(1);
-    }
-
-    switch (root->nodetype)
-    {
-    case NODE_VARIABLE:Install(root->varname,type,root->size,NODE_VARIABLE,NULL); 
-                       return;
-    case NODE_VAR_ARRAY:Install(root->varname,type,root->size,NODE_VAR_ARRAY,NULL);
-                        return;
-    case NODE_VAR_PARAMLIST:phead=NULL;
-                            createParamList(root->left);
-                            Install(root->varname,type,root->size,NODE_VAR_PARAMLIST,phead);
-                            return;
-    }      
-
-    if(root->left!=NULL)
-        GsymbolEntry(type,root->left);
-
-    if(root->right!=NULL)
-       GsymbolEntry(type,root->right);
 }
 
 struct Gsymbol *Lookup(char *name)
@@ -172,6 +86,7 @@ void printGsymbolTable()
     struct Gsymbol* temp = shead;
     while(temp!=NULL)
     {
+        printf("----------------\n");
         printf("%s %s %d\n",temp->name,temp->type->name,temp->binding);
         struct Paramstruct *t = temp->paramlist;
         if(t!=NULL)
@@ -185,84 +100,3 @@ void printGsymbolTable()
         temp=temp->next;
     }
 }
-
-
-//////////////GLOBAL DECLARATION NODE FUNCTIONS/////////////
-
-struct tnode* createDeclTree(char *c,int size,int nodetype,struct tnode *left,struct tnode *right)
-{
-    struct tnode *temp;
-    temp = (struct tnode*)malloc(sizeof(struct tnode));
-
-    if(c!=NULL)
-       temp->varname = c;
-    else
-       temp->varname = NULL;
-
-    temp->nodetype = nodetype;
-    temp->size = size;
-    temp->left = left;
-    temp->right = right;
-    return temp;
-}
-
-struct tnode* makeDataTypeNode(int nodetype,struct tnode *left,struct tnode *right)
-{
-    return createDeclTree(NULL,0,nodetype,left,right);
-}
-
-struct tnode* makeIdNodeDecl(int nodetype,char *str,int size,struct tnode *left)
-{
-    return createDeclTree(str,size,nodetype,left,NULL);
-}
-
-struct tnode* makeDeclNode(int nodetype,struct tnode *l, struct tnode *r)
-{
-    return createDeclTree(".",0,nodetype,l,r);
-}
-
-struct tnode* makeParamNode(int nodetype,struct tnode *left,struct tnode *right)
-{
-    struct tnode *temp;
-    temp = (struct tnode*)malloc(sizeof(struct tnode));
-    temp->varname = NULL;
-    temp->nodetype = nodetype;
-    temp->size = 0;
-    temp->left = left;
-    temp->right = right;
-    return temp;
-}
-
-void printDecl(struct tnode *t)
-{  
-    switch (t->nodetype)
-    {
-    case NODE_VARIABLE : printf("%s\n",t->varname);
-                         break;
-    case NODE_CONNECTOR : printf(".\n");
-                          break;
-    case NODE_INT : printf("int\n");
-                    break;
-    case NODE_STRING : printf("string\n");
-                       break;
-
-    case NODE_VAR_ARRAY : printf("%s\n",t->varname);
-                          break;
-    case NODE_VAR_PARAMLIST : printf("%s\n",t->varname);
-                              break; 
-
-    case NODE_RETURN : printf("%s\n",t->varname);
-                       break;                                                                                                                             
-    
-    default:
-        break;
-    }
-
-    if(t->left!=NULL)
-        printDecl(t->left);
-    
-    if(t->right!=NULL)
-        printDecl(t->right);
-        
-}
-////////////////////////////////////////////

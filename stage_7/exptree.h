@@ -1,5 +1,6 @@
 extern int bind;
 extern struct Typetable *Thead;
+extern struct Fieldlist *Fhead;
 extern struct Classtable *chead;
 extern struct Gsymbol *shead;
 extern struct Lsymbol *Lhead;
@@ -38,6 +39,7 @@ typedef struct Fieldlist{
 typedef struct tnode{
     int val;        // value (for constants)
     struct Typetable *type;       // type of the variable
+    struct Classtable *classtable;
     char* varname;  // variable name (for variable nodes)
     int size;
     int nodetype;   // node type - // information about non-leaf nodes at the bottom
@@ -50,6 +52,7 @@ typedef struct tnode{
 typedef struct Gsymbol {
     char* name;       // name of the variable
     struct Typetable *type;         // type of the variable int-1 , string-2
+    struct Classtable *classtable;
     int size; 
     int binding;      // stores the static memory address allocated to the variable
     struct Paramstruct *paramlist;
@@ -60,6 +63,7 @@ typedef struct Gsymbol {
 typedef struct Lsymbol{
     char *name;
     struct Typetable *type;
+    struct Classtable *classtable;
     int binding;
     struct Lsymbol *next;
 }Lsymbol;
@@ -77,7 +81,7 @@ typedef struct Classtable {
     struct Memberfunclist *Vfuncptr;
     struct Classtable *Parentptr;
     int Class_index;
-    int FieldCount;
+    int Fieldcount;
     int Methodcount;
     struct Classtable *next;
 }Classtable;
@@ -105,19 +109,66 @@ struct tnode *makeTypeConnector(int nodetype,struct tnode *left,struct tnode *ri
 
 void TypetableCreate();
 
-void FInstall(char *typename,char *varname);
+struct Fieldlist* Type_FieldInstall(char *typename,char *name);
 
-void createFieldlist(struct tnode *root);
-
-void TInstall(char *name);
-
-void TypetableEntry(struct tnode *root);
+struct Typetable* TInstall(char *name);
 
 struct Typetable *TLookup(char *name);
 
 struct Fieldlist *FLookup(struct Fieldlist *root,char *name);
 
 void printTypetable();
+
+////////////////////////////////////////
+///////////CLASS CREATION FUNCTIONS/////
+
+struct Paramstruct* createClassParamNode(char *typename,char *name);
+
+struct Paramstruct* Param_Install(struct Paramstruct *paramlist,char *typename,char *name);
+
+
+
+struct Classtable* createClassNode(char *name);
+
+struct Classtable* CInstall(char *name, char *parent_class_name);
+
+void printClasstable();
+
+
+
+struct Fieldlist* createFieldNode(struct Classtable *cptr,char *typename, char *name);
+
+struct Fieldlist* createFieldEntry(struct Fieldlist *field, struct Fieldlist *node);
+
+void Class_Finstall(struct Classtable *cptr, char *typename, char *name);
+
+struct Fieldlist* Class_Flookup(struct Classtable *cptr, char *name);
+
+void printFieldlist(struct Fieldlist *fields);
+
+
+
+struct Memberfunclist* createMemberFuncNode(char *name,struct Typetable *type, struct Paramstruct *paramlist);
+
+struct Memberfunclist* createMemberFuncEntry(struct Memberfunclist *funclist, struct Memberfunclist *node );
+
+void Class_Minstall(struct Classtable *cptr,char *name, struct Typetable *type, struct Paramstruct *paramlist);
+
+struct Memberfunclist* Class_Mlookup(struct Classtable *cptr, char *name);
+
+void printMemberfunclist(struct Memberfunclist *funclist);
+
+
+
+struct tnode *makeClassNewNode(int nodetype,char *name,struct tnode *left);
+
+struct tnode *makeClassDeleteNode(int nodetype,char *name,struct tnode *left);
+
+struct tnode *makeSelfNode(int nodetype,char *name);
+
+struct tnode *makeClassFieldNode(int nodetype,char *name,struct tnode *left,struct tnode *right);
+
+struct tnode *makeClassIdNode(int nodetype,char *name,struct tnode *left,struct tnode *right,struct Classtable *classtable);
 
 /////////////////////////////////////
 /////Global Decl functions////
@@ -141,15 +192,7 @@ int getBind(int mem);
 
 int getfLabel();
 
-struct Paramstruct *ParamLookup(char *name);
-
-void createParamNode(char *name,struct Typetable *type);
-
-void createParamList(struct tnode *root);
-
-void Install(char *name, struct Typetable *type, int size,int nodetype,struct Paramstruct *paramlist);
-
-void GsymbolEntry(struct Typetable *type, struct tnode *root);
+void GInstall(char *name, struct Typetable *type, int size,struct Paramstruct *paramlist,int nodetype);
 
 struct Gsymbol *Lookup(char *name);
 
@@ -185,6 +228,8 @@ void LsymbolEntryParam(struct tnode *root);
 void LsymbolEntryDeclVar(struct Typetable *type,struct tnode *root);
 
 void LsymbolEntryDecl(struct tnode *root);
+
+void LsymbolEntrySelf();
 
 struct Lsymbol* LsymbolEntry(struct tnode *paramlist,struct tnode *Ldeclblock);
 
@@ -397,6 +442,8 @@ int calldynamic(FILE *fptr,struct tnode *root);
 int callnull(FILE *fptr);
 
 void fieldVars(FILE *fptr,int r,struct tnode *root);
+
+int findClassFieldorNot(struct tnode *root);
 
 int callfield(FILE *fptr,struct tnode *root);
 

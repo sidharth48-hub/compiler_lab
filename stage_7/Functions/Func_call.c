@@ -28,7 +28,7 @@ void push_arglist(struct tnode *root,FILE *fptr)
     {
         case NODE_VARIABLE: 
         case NODE_VAR_ARRAY:
-        case NODE_FIELD: reg_no = codegen(root,fptr); //reg_no of variable;
+        case NODE_CLASSFIELD: reg_no = codegen(root,fptr); //reg_no of variable;
                             fprintf(fptr,"MOV R%d,[R%d]\n",reg_no,reg_no);
                             fprintf(fptr,"PUSH R%d\n",reg_no);
                             return;

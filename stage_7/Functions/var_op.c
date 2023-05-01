@@ -65,7 +65,7 @@ int setupvariable(struct tnode *root,FILE *fptr)
 
         case NODE_VAR_ARRAY: varcode(root,new_reg,fptr);
                              break;
-        case NODE_FIELD_VAR: setupFieldVar(fptr,root,new_reg);
+        case NODE_CLASSFIELD_VAR: setupFieldVar(fptr,root,new_reg);
                              break;                                           
     }
 
